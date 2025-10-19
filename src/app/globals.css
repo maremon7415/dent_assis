@@ -184,3 +184,12 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* added cursor pointer to bydefault */
+@layer base {
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
