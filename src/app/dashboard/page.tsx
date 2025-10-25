@@ -1,9 +1,11 @@
+// app/dashboard/page.tsx (or wherever this file lives)
+
 import ActivityOverview from "@/components/dashboard/ActivityOverview";
 import MainActions from "@/components/dashboard/MainActions";
 import WelcomeSection from "@/components/dashboard/WelcomeSection";
 import Navbar from "@/components/Navbar";
 
-function DashboardPage() {
+export default async function DashboardPage() {
   return (
     <>
       <Navbar />
@@ -16,4 +18,3 @@ function DashboardPage() {
     </>
   );
 }
-export default DashboardPage;
