@@ -29,9 +29,9 @@ function Navbar() {
             <Link
               href="/dashboard"
               className={`flex items-center gap-2 transition-colors ${
-                pathname === "/dashboard"
-                  ? "text-foreground hover:text-primary font-medium"
-                  : "text-muted-foreground hover:text-foreground"
+                pathname === "/dashboard" ?
+                  "text-foreground hover:text-primary font-medium"
+                : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <HomeIcon className="w-4 h-4" />
@@ -41,9 +41,9 @@ function Navbar() {
             <Link
               href="/appointments"
               className={`flex items-center gap-2 transition-colors hover:text-foreground ${
-                pathname === "/appointments"
-                  ? "text-foreground"
-                  : "text-muted-foreground"
+                pathname === "/appointments" ? "text-foreground" : (
+                  "text-muted-foreground"
+                )
               }`}
             >
               <CalendarIcon className="w-4 h-4" />
@@ -53,9 +53,9 @@ function Navbar() {
             <Link
               href="/voice"
               className={`flex items-center gap-2 transition-colors hover:text-foreground ${
-                pathname === "/voice"
-                  ? "text-foreground"
-                  : "text-muted-foreground"
+                pathname === "/voice" ? "text-foreground" : (
+                  "text-muted-foreground"
+                )
               }`}
             >
               <MicIcon className="w-4 h-4" />
@@ -64,9 +64,9 @@ function Navbar() {
             <Link
               href="/pro"
               className={`flex items-center gap-2 transition-colors hover:text-foreground ${
-                pathname === "/pro"
-                  ? "text-foreground"
-                  : "text-muted-foreground"
+                pathname === "/pro" ? "text-foreground" : (
+                  "text-muted-foreground"
+                )
               }`}
             >
               <CrownIcon className="w-4 h-4" />

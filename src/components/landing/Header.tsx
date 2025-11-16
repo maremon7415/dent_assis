@@ -15,7 +15,7 @@ function Header() {
             height={32}
             className="w-11"
           />
-          <span className="font-semibold text-lg">DentWise</span>
+          <span className="font-semibold text-lg">Dent-Assist</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
