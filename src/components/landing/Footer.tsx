@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 function Footer() {
   return (
@@ -9,7 +10,7 @@ function Footer() {
             <div className="flex items-center gap-2">
               <Image
                 src="/logo.png"
-                alt="DentWise Logo"
+                alt="Dent-Assist Logo"
                 width={32}
                 height={32}
                 className="w-8 h-8"
@@ -25,19 +26,19 @@ function Footer() {
             <h4 className="font-medium mb-3">Product</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <a href="#" className="hover:text-foreground">
-                  How it works
-                </a>
+                <Link href="/about" className="hover:text-foreground">
+                  About
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground">
+                <Link href="/pricing" className="hover:text-foreground">
                   Pricing
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground">
+                <Link href="#" className="hover:text-foreground">
                   FAQ
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -87,7 +88,7 @@ function Footer() {
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
           <p>
-            &copy; 2025 DentAssis. Built for real people with real dental
+            &copy; 2025 Dent-Assist. Built for real people with real dental
             questions.
           </p>
         </div>

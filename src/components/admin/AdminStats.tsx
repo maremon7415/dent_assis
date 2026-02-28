@@ -1,5 +1,5 @@
+import { Calendar, Clock, UserCheck, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Calendar, UserCheck, Clock } from "lucide-react";
 
 interface AdminStatsProps {
   totalDoctors: number;
@@ -15,30 +15,36 @@ function AdminStats({
   totalAppointments,
 }: AdminStatsProps) {
   return (
-    <div className="grid md:grid-cols-4 gap-6 mb-12">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-12">
       <Card className="border-2 hover:border-primary/30 transition-all duration-300">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center">
-              <Users className="size-6" />
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center shrink-0">
+              <Users className="size-5 sm:size-6" />
             </div>
             <div>
-              <div className="text-2xl font-bold">{totalDoctors}</div>
-              <div className="text-sm text-muted-foreground">Total Doctors</div>
+              <div className="text-xl sm:text-2xl font-bold">
+                {totalDoctors}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                Total Doctors
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
       <Card className="border-2 hover:border-primary/30 transition-all duration-300">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center">
-              <UserCheck className="size-6" />
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center shrink-0">
+              <UserCheck className="size-5 sm:size-6" />
             </div>
             <div>
-              <div className="text-2xl font-bold">{activeDoctors}</div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xl sm:text-2xl font-bold">
+                {activeDoctors}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground">
                 Active Doctors
               </div>
             </div>
@@ -47,14 +53,16 @@ function AdminStats({
       </Card>
 
       <Card className="border-2 hover:border-primary/30 transition-all duration-300">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center">
-              <Calendar className="size-6" />
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center shrink-0">
+              <Calendar className="size-5 sm:size-6" />
             </div>
             <div>
-              <div className="text-2xl font-bold">{totalAppointments}</div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xl sm:text-2xl font-bold">
+                {totalAppointments}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground">
                 Total Appointments
               </div>
             </div>
@@ -63,15 +71,17 @@ function AdminStats({
       </Card>
 
       <Card className="border-2 hover:border-primary/30 transition-all duration-300">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center">
-              <Clock className="size-6" />
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center shrink-0">
+              <Clock className="size-5 sm:size-6" />
             </div>
             <div>
-              <div className="text-2xl font-bold">{completedAppointments}</div>
-              <div className="text-sm text-muted-foreground">
-                Completed Appointments
+              <div className="text-xl sm:text-2xl font-bold">
+                {completedAppointments}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                Completed
               </div>
             </div>
           </div>

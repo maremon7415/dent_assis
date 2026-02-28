@@ -5,9 +5,9 @@ import { Button } from "../ui/button";
 
 function HowItWorks() {
   return (
-    <section className="relative py-32 px-6 outline-hidden z-10 max-w-7xl mx-auto">
+    <section className="relative py-20 lg:py-32 px-6 outline-hidden z-10 max-w-7xl mx-auto">
       {/* HEADER */}
-      <div className="text-center mb-20">
+      <div className="text-center mb-12 lg:mb-20">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/5 to-primary/10 rounded-full border border-primary/10 backdrop-blur-sm mb-6">
           <ZapIcon className="size-4 text-primary" />
           <span className="text-sm font-medium text-primary">
@@ -15,7 +15,7 @@ function HowItWorks() {
           </span>
         </div>
 
-        <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 lg:mb-6 tracking-tight">
           <span className="bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
             Three steps to
           </span>
@@ -25,7 +25,7 @@ function HowItWorks() {
           </span>
         </h2>
 
-        <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
           Our streamlined process makes dental care accessible, convenient, and
           stress-free for everyone
         </p>
@@ -36,7 +36,7 @@ function HowItWorks() {
         {/* CONNECTION LINE */}
         <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent transform -translate-y-1/2 hidden lg:block"></div>
 
-        <div className="grid lg:grid-cols-3 gap-12 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-8">
           {/* STEP 1 */}
           <div className="relative group">
             <div className="relative bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl rounded-3xl p-8 border border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10">
@@ -160,7 +160,7 @@ function HowItWorks() {
       {/* BOTTOM CTA */}
       <div className="text-center mt-16">
         <SignUpButton mode="modal">
-          <Button size="lg">
+          <Button size="lg" className="w-full sm:w-auto">
             <ArrowRightIcon className="mr-2 size-5" />
             Get started now
           </Button>

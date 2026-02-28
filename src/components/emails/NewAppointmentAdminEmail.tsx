@@ -5,33 +5,34 @@ import {
   Heading,
   Html,
   Img,
-  Link,
   Preview,
   Section,
   Text,
 } from "@react-email/components";
 
-interface AppointmentConfirmationEmailProps {
+interface NewAppointmentAdminEmailProps {
   doctorName: string;
+  patientName: string;
+  patientEmail: string;
+  patientPhone: string;
   appointmentDate: string;
   appointmentTime: string;
   appointmentType: string;
-  duration: string;
-  price: string;
 }
 
-function AppointmentConfirmationEmail({
+function NewAppointmentAdminEmail({
   doctorName,
+  patientName,
+  patientEmail,
+  patientPhone,
   appointmentDate,
   appointmentTime,
   appointmentType,
-  duration,
-  price,
-}: AppointmentConfirmationEmailProps) {
+}: NewAppointmentAdminEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>Your dental appointment has been confirmed</Preview>
+      <Preview>New Appointment Booked - Dent-Assist</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={logoContainer}>
@@ -45,15 +46,22 @@ function AppointmentConfirmationEmail({
             <Text style={logoText}>Dent-Assist</Text>
           </Section>
 
-          <Heading style={h1}>Appointment Confirmed! 🦷</Heading>
-
-          <Text style={text}>Hi there,</Text>
+          <Heading style={h1}>New Appointment Booked 🔔</Heading>
 
           <Text style={text}>
-            Your dental appointment has been successfully booked. Here are the details:
+            A new appointment has been booked. Here are the details:
           </Text>
 
           <Section style={appointmentDetails}>
+            <Text style={detailLabel}>Patient Name</Text>
+            <Text style={detailValue}>{patientName}</Text>
+
+            <Text style={detailLabel}>Patient Email</Text>
+            <Text style={detailValue}>{patientEmail}</Text>
+
+            <Text style={detailLabel}>Patient Phone</Text>
+            <Text style={detailValue}>{patientPhone}</Text>
+
             <Text style={detailLabel}>Doctor</Text>
             <Text style={detailValue}>{doctorName}</Text>
 
@@ -65,36 +73,10 @@ function AppointmentConfirmationEmail({
 
             <Text style={detailLabel}>Time</Text>
             <Text style={detailValue}>{appointmentTime}</Text>
-
-            <Text style={detailLabel}>Duration</Text>
-            <Text style={detailValue}>{duration}</Text>
-
-            <Text style={detailLabel}>Cost</Text>
-            <Text style={detailValue}>{price}</Text>
-
-            <Text style={detailLabel}>Location</Text>
-            <Text style={detailValue}>Dental Center</Text>
-          </Section>
-
-          <Text style={text}>
-            Please arrive 15 minutes early for your appointment. If you need to reschedule or
-            cancel, please contact us at least 24 hours in advance.
-          </Text>
-
-          <Section style={buttonContainer}>
-            <Link style={button} href={process.env.NEXT_PUBLIC_APP_URL + "/appointments"}>
-              View My Appointments
-            </Link>
           </Section>
 
           <Text style={footer}>
-            Best regards,
-            <br />
-            The Dent-Assist Team
-          </Text>
-
-          <Text style={footerText}>
-            If you have any questions, please contact us at support@dent-assist.com
+            Please log in to your admin dashboard to manage this appointment.
           </Text>
         </Container>
       </Body>
@@ -102,9 +84,8 @@ function AppointmentConfirmationEmail({
   );
 }
 
-export default AppointmentConfirmationEmail;
+export default NewAppointmentAdminEmail;
 
-// 🤡🤡🤡🤡🤡 styles that were generated using AI 🤡🤡🤡🤡🤡
 const main = {
   backgroundColor: "#ffffff",
   fontFamily:
@@ -131,7 +112,7 @@ const logo = {
 const logoText = {
   fontSize: "20px",
   fontWeight: "bold",
-  color: "#2563eb",
+  color: "#d87943",
   margin: "0",
   display: "inline",
   marginLeft: "12px",
@@ -167,41 +148,16 @@ const detailLabel = {
   margin: "8px 0 4px 0",
 };
 
-const detailValue = {
+const detailValue: Record<string, string> = {
   color: "#1f2937",
   fontSize: "16px",
   fontWeight: "600",
   margin: "0 0 16px 0",
 };
 
-const buttonContainer = {
-  textAlign: "center" as const,
-  margin: "32px 0",
-};
-
-const button = {
-  backgroundColor: "#2563eb",
-  borderRadius: "6px",
-  color: "#ffffff",
-  fontSize: "16px",
-  fontWeight: "600",
-  textDecoration: "none",
-  textAlign: "center" as const,
-  display: "inline-block",
-  padding: "12px 24px",
-};
-
-const footer = {
+const footer: Record<string, string> = {
   color: "#374151",
   fontSize: "16px",
   lineHeight: "26px",
   margin: "32px 0 16px 0",
-};
-
-const footerText = {
-  color: "#6b7280",
-  fontSize: "14px",
-  lineHeight: "24px",
-  margin: "16px 0 0 0",
-  textAlign: "center" as const,
 };

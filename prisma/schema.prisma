@@ -52,6 +52,8 @@ model Appointment {
   status      AppointmentStatus @default(CONFIRMED)
   notes       String?
   reason      String? // reason for appointment - teeth cleaning? emergency visit? etc.
+  reminderSent24h Boolean        @default(false)
+  reminderSent1Hour Boolean      @default(false)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
@@ -73,6 +75,8 @@ enum Gender {
 }
 
 enum AppointmentStatus {
- CONFIRMED
- COMPLETED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  EXPIRED
 }

@@ -1,22 +1,20 @@
-import AppointmentConfirmationEmail from "@/components/emails/AppointmentConfirmationEmail";
-import resend from "@/lib/resend";
 import { NextResponse } from "next/server";
+import AppointmentReminderEmail from "@/components/emails/AppointmentReminderEmail";
+import resend from "@/lib/resend";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-
     const {
       userEmail,
+      userName,
       doctorName,
       appointmentDate,
       appointmentTime,
       appointmentType,
-      duration,
-      price,
+      clinicAddress,
     } = body;
 
-    // validate required fields
     if (!userEmail || !doctorName || !appointmentDate || !appointmentTime) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -24,32 +22,30 @@ export async function POST(request: Request) {
       );
     }
 
-    // send the email
-    // do not use this in prod, only for testing purposes
     const { data, error } = await resend.emails.send({
       from: "Dent-Assist <no-reply@dev.emon.pro>",
       to: [userEmail],
-      subject: "Appointment Confirmation - Dent-Assist",
-      react: AppointmentConfirmationEmail({
+      subject: `Reminder: Your dental appointment on ${appointmentDate}`,
+      react: AppointmentReminderEmail({
+        userName: userName || "Patient",
         doctorName,
         appointmentDate,
         appointmentTime,
-        appointmentType,
-        duration,
-        price,
+        appointmentType: appointmentType || "Dental Checkup",
+        clinicAddress: clinicAddress || "Dental Center",
       }),
     });
 
     if (error) {
       console.error("Resend error:", error);
       return NextResponse.json(
-        { error: "Failed to send email" },
+        { error: "Failed to send reminder email" },
         { status: 500 },
       );
     }
 
     return NextResponse.json(
-      { message: "Email sent successfully", emailId: data?.id },
+      { message: "Reminder email sent successfully", emailId: data?.id },
       { status: 200 },
     );
   } catch (error) {

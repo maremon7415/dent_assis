@@ -11,27 +11,27 @@ import {
   Text,
 } from "@react-email/components";
 
-interface AppointmentConfirmationEmailProps {
+interface AppointmentReminderEmailProps {
+  userName: string;
   doctorName: string;
   appointmentDate: string;
   appointmentTime: string;
   appointmentType: string;
-  duration: string;
-  price: string;
+  clinicAddress: string;
 }
 
-function AppointmentConfirmationEmail({
+function AppointmentReminderEmail({
+  userName,
   doctorName,
   appointmentDate,
   appointmentTime,
   appointmentType,
-  duration,
-  price,
-}: AppointmentConfirmationEmailProps) {
+  clinicAddress,
+}: AppointmentReminderEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>Your dental appointment has been confirmed</Preview>
+      <Preview>Reminder: Your dental appointment is coming up!</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={logoContainer}>
@@ -45,12 +45,12 @@ function AppointmentConfirmationEmail({
             <Text style={logoText}>Dent-Assist</Text>
           </Section>
 
-          <Heading style={h1}>Appointment Confirmed! 🦷</Heading>
+          <Heading style={h1}>Appointment Reminder 🦷</Heading>
 
-          <Text style={text}>Hi there,</Text>
+          <Text style={text}>Hi {userName},</Text>
 
           <Text style={text}>
-            Your dental appointment has been successfully booked. Here are the details:
+            This is a friendly reminder about your upcoming dental appointment:
           </Text>
 
           <Section style={appointmentDetails}>
@@ -66,35 +66,40 @@ function AppointmentConfirmationEmail({
             <Text style={detailLabel}>Time</Text>
             <Text style={detailValue}>{appointmentTime}</Text>
 
-            <Text style={detailLabel}>Duration</Text>
-            <Text style={detailValue}>{duration}</Text>
-
-            <Text style={detailLabel}>Cost</Text>
-            <Text style={detailValue}>{price}</Text>
-
             <Text style={detailLabel}>Location</Text>
-            <Text style={detailValue}>Dental Center</Text>
+            <Text style={detailValue}>{clinicAddress}</Text>
+          </Section>
+
+          <Section style={tipsContainer}>
+            <Text style={tipsTitle}>Tips for your visit:</Text>
+            <ul style={tipsList}>
+              <li style={tipItem}>Please arrive 15 minutes early</li>
+              <li style={tipItem}>Bring your insurance card (if applicable)</li>
+              <li style={tipItem}>
+                List any medications you're currently taking
+              </li>
+              <li style={tipItem}>Write down any questions for your dentist</li>
+            </ul>
           </Section>
 
           <Text style={text}>
-            Please arrive 15 minutes early for your appointment. If you need to reschedule or
-            cancel, please contact us at least 24 hours in advance.
+            Need to reschedule? You can manage your appointment from your
+            dashboard.
           </Text>
 
-          <Section style={buttonContainer}>
-            <Link style={button} href={process.env.NEXT_PUBLIC_APP_URL + "/appointments"}>
+          <Section style={ctaContainer}>
+            <Link
+              style={button}
+              href={process.env.NEXT_PUBLIC_APP_URL + "/appointments"}
+            >
               View My Appointments
             </Link>
           </Section>
 
           <Text style={footer}>
-            Best regards,
+            See you soon!
             <br />
             The Dent-Assist Team
-          </Text>
-
-          <Text style={footerText}>
-            If you have any questions, please contact us at support@dent-assist.com
           </Text>
         </Container>
       </Body>
@@ -102,9 +107,8 @@ function AppointmentConfirmationEmail({
   );
 }
 
-export default AppointmentConfirmationEmail;
+export default AppointmentReminderEmail;
 
-// 🤡🤡🤡🤡🤡 styles that were generated using AI 🤡🤡🤡🤡🤡
 const main = {
   backgroundColor: "#ffffff",
   fontFamily:
@@ -131,7 +135,7 @@ const logo = {
 const logoText = {
   fontSize: "20px",
   fontWeight: "bold",
-  color: "#2563eb",
+  color: "#d87943",
   margin: "0",
   display: "inline",
   marginLeft: "12px",
@@ -174,13 +178,40 @@ const detailValue = {
   margin: "0 0 16px 0",
 };
 
-const buttonContainer = {
+const tipsContainer: Record<string, unknown> = {
+  backgroundColor: "#fef3c7",
+  borderRadius: "8px",
+  padding: "20px",
+  margin: "24px 0",
+};
+
+const tipsTitle = {
+  color: "#92400e",
+  fontSize: "16px",
+  fontWeight: "600",
+  margin: "0 0 12px 0",
+};
+
+const tipsList = {
+  color: "#92400e",
+  fontSize: "14px",
+  margin: "0",
+  paddingLeft: "20px",
+};
+
+const tipItem: Record<string, string> = {
+  color: "#92400e",
+  fontSize: "14px",
+  marginBottom: "8px",
+};
+
+const ctaContainer = {
   textAlign: "center" as const,
   margin: "32px 0",
 };
 
 const button = {
-  backgroundColor: "#2563eb",
+  backgroundColor: "#d87943",
   borderRadius: "6px",
   color: "#ffffff",
   fontSize: "16px",
@@ -196,12 +227,4 @@ const footer = {
   fontSize: "16px",
   lineHeight: "26px",
   margin: "32px 0 16px 0",
-};
-
-const footerText = {
-  color: "#6b7280",
-  fontSize: "14px",
-  lineHeight: "24px",
-  margin: "16px 0 0 0",
-  textAlign: "center" as const,
 };

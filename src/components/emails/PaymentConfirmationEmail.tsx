@@ -11,27 +11,29 @@ import {
   Text,
 } from "@react-email/components";
 
-interface AppointmentConfirmationEmailProps {
-  doctorName: string;
+interface PaymentConfirmationEmailProps {
+  userName: string;
+  amount: string;
   appointmentDate: string;
   appointmentTime: string;
+  doctorName: string;
   appointmentType: string;
-  duration: string;
-  price: string;
+  invoiceNumber: string;
 }
 
-function AppointmentConfirmationEmail({
-  doctorName,
+function PaymentConfirmationEmail({
+  userName,
+  amount,
   appointmentDate,
   appointmentTime,
+  doctorName,
   appointmentType,
-  duration,
-  price,
-}: AppointmentConfirmationEmailProps) {
+  invoiceNumber,
+}: PaymentConfirmationEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>Your dental appointment has been confirmed</Preview>
+      <Preview>Payment Confirmation - Dent-Assist</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={logoContainer}>
@@ -45,19 +47,38 @@ function AppointmentConfirmationEmail({
             <Text style={logoText}>Dent-Assist</Text>
           </Section>
 
-          <Heading style={h1}>Appointment Confirmed! 🦷</Heading>
+          <Heading style={h1}>Payment Confirmed! ✅</Heading>
 
-          <Text style={text}>Hi there,</Text>
+          <Text style={text}>Hi {userName},</Text>
 
           <Text style={text}>
-            Your dental appointment has been successfully booked. Here are the details:
+            Thank you for your payment. Your booking is now confirmed!
           </Text>
+
+          <Section style={paymentDetails}>
+            <Text style={paymentTitle}>Payment Receipt</Text>
+
+            <div style={paymentRow}>
+              <Text style={paymentLabel}>Invoice Number</Text>
+              <Text style={paymentValue}>{invoiceNumber}</Text>
+            </div>
+
+            <div style={paymentRow}>
+              <Text style={paymentLabel}>Amount Paid</Text>
+              <Text style={paymentValueHighlight}>{amount}</Text>
+            </div>
+
+            <div style={paymentRow}>
+              <Text style={paymentLabel}>Status</Text>
+              <Text style={paymentStatus}>PAID</Text>
+            </div>
+          </Section>
 
           <Section style={appointmentDetails}>
             <Text style={detailLabel}>Doctor</Text>
             <Text style={detailValue}>{doctorName}</Text>
 
-            <Text style={detailLabel}>Appointment Type</Text>
+            <Text style={detailLabel}>Service</Text>
             <Text style={detailValue}>{appointmentType}</Text>
 
             <Text style={detailLabel}>Date</Text>
@@ -65,36 +86,30 @@ function AppointmentConfirmationEmail({
 
             <Text style={detailLabel}>Time</Text>
             <Text style={detailValue}>{appointmentTime}</Text>
-
-            <Text style={detailLabel}>Duration</Text>
-            <Text style={detailValue}>{duration}</Text>
-
-            <Text style={detailLabel}>Cost</Text>
-            <Text style={detailValue}>{price}</Text>
-
-            <Text style={detailLabel}>Location</Text>
-            <Text style={detailValue}>Dental Center</Text>
           </Section>
 
           <Text style={text}>
-            Please arrive 15 minutes early for your appointment. If you need to reschedule or
-            cancel, please contact us at least 24 hours in advance.
+            Please arrive 15 minutes before your appointment time. Bring this
+            email as confirmation.
           </Text>
 
-          <Section style={buttonContainer}>
-            <Link style={button} href={process.env.NEXT_PUBLIC_APP_URL + "/appointments"}>
+          <Section style={ctaContainer}>
+            <Link
+              style={button}
+              href={process.env.NEXT_PUBLIC_APP_URL + "/appointments"}
+            >
               View My Appointments
             </Link>
           </Section>
 
           <Text style={footer}>
-            Best regards,
+            Thank you for choosing Dent-Assist!
             <br />
             The Dent-Assist Team
           </Text>
 
           <Text style={footerText}>
-            If you have any questions, please contact us at support@dent-assist.com
+            Questions? Contact us at support@dent-assist.com
           </Text>
         </Container>
       </Body>
@@ -102,9 +117,8 @@ function AppointmentConfirmationEmail({
   );
 }
 
-export default AppointmentConfirmationEmail;
+export default PaymentConfirmationEmail;
 
-// 🤡🤡🤡🤡🤡 styles that were generated using AI 🤡🤡🤡🤡🤡
 const main = {
   backgroundColor: "#ffffff",
   fontFamily:
@@ -131,7 +145,7 @@ const logo = {
 const logoText = {
   fontSize: "20px",
   fontWeight: "bold",
-  color: "#2563eb",
+  color: "#d87943",
   margin: "0",
   display: "inline",
   marginLeft: "12px",
@@ -152,6 +166,56 @@ const text = {
   margin: "16px 0",
 };
 
+const paymentDetails = {
+  backgroundColor: "#ecfdf5",
+  border: "1px solid #a7f3d0",
+  borderRadius: "8px",
+  padding: "24px",
+  margin: "24px 0",
+};
+
+const paymentTitle = {
+  color: "#065f46",
+  fontSize: "18px",
+  fontWeight: "600",
+  margin: "0 0 16px 0",
+  textAlign: "center" as const,
+};
+
+const paymentRow = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "12px",
+};
+
+const paymentLabel = {
+  color: "#065f46",
+  fontSize: "14px",
+  margin: "0",
+};
+
+const paymentValue: Record<string, string> = {
+  color: "#065f46",
+  fontSize: "14px",
+  fontWeight: "600",
+  margin: "0",
+};
+
+const paymentValueHighlight: Record<string, string> = {
+  color: "#059669",
+  fontSize: "18px",
+  fontWeight: "700",
+  margin: "0",
+};
+
+const paymentStatus: Record<string, string> = {
+  color: "#059669",
+  fontSize: "14px",
+  fontWeight: "700",
+  margin: "0",
+};
+
 const appointmentDetails = {
   backgroundColor: "#f9fafb",
   border: "1px solid #e5e7eb",
@@ -167,20 +231,20 @@ const detailLabel = {
   margin: "8px 0 4px 0",
 };
 
-const detailValue = {
+const detailValue: Record<string, string> = {
   color: "#1f2937",
   fontSize: "16px",
   fontWeight: "600",
   margin: "0 0 16px 0",
 };
 
-const buttonContainer = {
+const ctaContainer = {
   textAlign: "center" as const,
   margin: "32px 0",
 };
 
 const button = {
-  backgroundColor: "#2563eb",
+  backgroundColor: "#d87943",
   borderRadius: "6px",
   color: "#ffffff",
   fontSize: "16px",
@@ -191,7 +255,7 @@ const button = {
   padding: "12px 24px",
 };
 
-const footer = {
+const footer: Record<string, string> = {
   color: "#374151",
   fontSize: "16px",
   lineHeight: "26px",

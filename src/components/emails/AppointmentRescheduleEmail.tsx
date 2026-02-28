@@ -11,27 +11,29 @@ import {
   Text,
 } from "@react-email/components";
 
-interface AppointmentConfirmationEmailProps {
+interface AppointmentRescheduleEmailProps {
+  userName: string;
   doctorName: string;
-  appointmentDate: string;
-  appointmentTime: string;
+  oldDate: string;
+  oldTime: string;
+  newDate: string;
+  newTime: string;
   appointmentType: string;
-  duration: string;
-  price: string;
 }
 
-function AppointmentConfirmationEmail({
+function AppointmentRescheduleEmail({
+  userName,
   doctorName,
-  appointmentDate,
-  appointmentTime,
+  oldDate,
+  oldTime,
+  newDate,
+  newTime,
   appointmentType,
-  duration,
-  price,
-}: AppointmentConfirmationEmailProps) {
+}: AppointmentRescheduleEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>Your dental appointment has been confirmed</Preview>
+      <Preview>Your appointment has been rescheduled - Dent-Assist</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={logoContainer}>
@@ -45,12 +47,13 @@ function AppointmentConfirmationEmail({
             <Text style={logoText}>Dent-Assist</Text>
           </Section>
 
-          <Heading style={h1}>Appointment Confirmed! 🦷</Heading>
+          <Heading style={h1}>Appointment Rescheduled 📅</Heading>
 
-          <Text style={text}>Hi there,</Text>
+          <Text style={text}>Hi {userName},</Text>
 
           <Text style={text}>
-            Your dental appointment has been successfully booked. Here are the details:
+            Your dental appointment has been successfully rescheduled. Here are
+            the updated details:
           </Text>
 
           <Section style={appointmentDetails}>
@@ -60,29 +63,27 @@ function AppointmentConfirmationEmail({
             <Text style={detailLabel}>Appointment Type</Text>
             <Text style={detailValue}>{appointmentType}</Text>
 
-            <Text style={detailLabel}>Date</Text>
-            <Text style={detailValue}>{appointmentDate}</Text>
+            <Text style={detailLabel}>Previous Date & Time</Text>
+            <Text style={detailValueOld}>
+              {oldDate} at {oldTime}
+            </Text>
 
-            <Text style={detailLabel}>Time</Text>
-            <Text style={detailValue}>{appointmentTime}</Text>
-
-            <Text style={detailLabel}>Duration</Text>
-            <Text style={detailValue}>{duration}</Text>
-
-            <Text style={detailLabel}>Cost</Text>
-            <Text style={detailValue}>{price}</Text>
-
-            <Text style={detailLabel}>Location</Text>
-            <Text style={detailValue}>Dental Center</Text>
+            <Text style={detailLabel}>New Date & Time</Text>
+            <Text style={detailValueNew}>
+              {newDate} at {newTime}
+            </Text>
           </Section>
 
           <Text style={text}>
-            Please arrive 15 minutes early for your appointment. If you need to reschedule or
-            cancel, please contact us at least 24 hours in advance.
+            Please make a note of your new appointment time. We look forward to
+            seeing you!
           </Text>
 
-          <Section style={buttonContainer}>
-            <Link style={button} href={process.env.NEXT_PUBLIC_APP_URL + "/appointments"}>
+          <Section style={ctaContainer}>
+            <Link
+              style={button}
+              href={process.env.NEXT_PUBLIC_APP_URL + "/appointments"}
+            >
               View My Appointments
             </Link>
           </Section>
@@ -92,19 +93,14 @@ function AppointmentConfirmationEmail({
             <br />
             The Dent-Assist Team
           </Text>
-
-          <Text style={footerText}>
-            If you have any questions, please contact us at support@dent-assist.com
-          </Text>
         </Container>
       </Body>
     </Html>
   );
 }
 
-export default AppointmentConfirmationEmail;
+export default AppointmentRescheduleEmail;
 
-// 🤡🤡🤡🤡🤡 styles that were generated using AI 🤡🤡🤡🤡🤡
 const main = {
   backgroundColor: "#ffffff",
   fontFamily:
@@ -131,7 +127,7 @@ const logo = {
 const logoText = {
   fontSize: "20px",
   fontWeight: "bold",
-  color: "#2563eb",
+  color: "#d87943",
   margin: "0",
   display: "inline",
   marginLeft: "12px",
@@ -167,20 +163,35 @@ const detailLabel = {
   margin: "8px 0 4px 0",
 };
 
-const detailValue = {
+const detailValue: Record<string, string> = {
   color: "#1f2937",
   fontSize: "16px",
   fontWeight: "600",
   margin: "0 0 16px 0",
 };
 
-const buttonContainer = {
+const detailValueOld: Record<string, string> = {
+  color: "#dc2626",
+  fontSize: "16px",
+  fontWeight: "600",
+  margin: "0 0 16px 0",
+  textDecoration: "line-through",
+};
+
+const detailValueNew: Record<string, string> = {
+  color: "#16a34a",
+  fontSize: "16px",
+  fontWeight: "600",
+  margin: "0 0 16px 0",
+};
+
+const ctaContainer = {
   textAlign: "center" as const,
   margin: "32px 0",
 };
 
 const button = {
-  backgroundColor: "#2563eb",
+  backgroundColor: "#d87943",
   borderRadius: "6px",
   color: "#ffffff",
   fontSize: "16px",
@@ -191,17 +202,9 @@ const button = {
   padding: "12px 24px",
 };
 
-const footer = {
+const footer: Record<string, string> = {
   color: "#374151",
   fontSize: "16px",
   lineHeight: "26px",
   margin: "32px 0 16px 0",
-};
-
-const footerText = {
-  color: "#6b7280",
-  fontSize: "14px",
-  lineHeight: "24px",
-  margin: "16px 0 0 0",
-  textAlign: "center" as const,
 };

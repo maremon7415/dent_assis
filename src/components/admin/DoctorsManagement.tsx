@@ -1,12 +1,4 @@
-import { useGetDoctors } from "@/hooks/use-doctors";
-import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
+import type { Doctor } from "@prisma/client";
 import {
   EditIcon,
   MailIcon,
@@ -14,12 +6,20 @@ import {
   PlusIcon,
   StethoscopeIcon,
 } from "lucide-react";
-import { Button } from "../ui/button";
 import Image from "next/image";
+import { useState } from "react";
+import { useGetDoctors } from "@/hooks/use-doctors";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
 import AddDoctorDialog from "./AddDoctorDialog";
 import EditDoctorDialog from "./EditDoctorDialog";
-import { Doctor } from "@prisma/client";
 
 function DoctorsManagement() {
   const { data: doctors = [] } = useGetDoctors();
@@ -40,8 +40,8 @@ function DoctorsManagement() {
 
   return (
     <>
-      <Card className="mb-12">
-        <CardHeader className="flex items-center justify-between">
+      <Card className="mb-8 sm:mb-12">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2">
               <StethoscopeIcon className="size-5 text-primary" />
@@ -54,7 +54,7 @@ function DoctorsManagement() {
 
           <Button
             onClick={() => setIsAddDialogOpen(true)}
-            className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/100"
+            className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/100 w-full sm:w-auto"
           >
             <PlusIcon className="mr-2 size-4" />
             Add Doctor
@@ -66,15 +66,15 @@ function DoctorsManagement() {
             {doctors.map((doctor) => (
               <div
                 key={doctor.id}
-                className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border/50"
+                className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-muted/30 rounded-xl border border-border/50 gap-4"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-start gap-4">
                   <Image
                     src={doctor.imageUrl}
                     alt={doctor.name}
                     width={48}
                     height={48}
-                    className="size-12 rounded-full object-cover ring-2 ring-background"
+                    className="size-12 rounded-full object-cover ring-2 ring-background shrink-0"
                   />
 
                   <div>
@@ -87,7 +87,7 @@ function DoctorsManagement() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-4 mt-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <MailIcon className="h-3 w-3" />
                         {doctor.email}
@@ -100,12 +100,12 @@ function DoctorsManagement() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="text-center">
+                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                  <div className="text-center sm:block">
                     <div className="font-semibold text-primary">
                       {doctor.appointmentCount}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground sm:hidden">
                       Appointments
                     </div>
                   </div>
@@ -120,11 +120,11 @@ function DoctorsManagement() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 px-3"
+                    className="h-8 px-2 sm:px-3"
                     onClick={() => handleEditDoctor(doctor)}
                   >
-                    <EditIcon className="size-4 mr-1" />
-                    Edit
+                    <EditIcon className="size-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Edit</span>
                   </Button>
                 </div>
               </div>

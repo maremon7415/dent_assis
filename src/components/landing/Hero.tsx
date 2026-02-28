@@ -5,7 +5,7 @@ import Image from "next/image";
 
 function Hero() {
   return (
-    <section className="relative h-screen flex items-center overflow-hidden pt-20">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32 pb-20 lg:pt-20 lg:pb-0">
       {/* GRID BG  */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-muted/5 to-primary/5">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20"></div>
@@ -17,12 +17,12 @@ function Hero() {
 
       <div className="relative z-10 w-full px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* LEFT CONTENT */}
-            <div className="space-y-10">
+            <div className="space-y-8 lg:space-y-10 text-center lg:text-left">
               <div className="space-y-6">
                 {/* BADGE */}
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded-full border border-primary/20 backdrop-blur-sm">
+                <div className="inline-flex items-center gap-2 px-4 py-2 glass-panel rounded-full relative z-10 transition-transform hover:scale-105 duration-300">
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                   <span className="text-sm font-medium text-primary">
                     AI-Powered Dental Assistant
@@ -30,7 +30,7 @@ function Hero() {
                 </div>
 
                 {/* MAIN HEADING */}
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight">
                   <span className="bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
                     Your dental
                   </span>
@@ -45,7 +45,7 @@ function Hero() {
                 </h1>
 
                 {/* SUBTITLE */}
-                <p className="text-lg text-muted-foreground leading-relaxed max-w-xl font-medium">
+                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium">
                   Chat with our AI dental assistant for instant advice, book
                   smart appointments, and get personalized care recommendations.
                   Available 24/7.
@@ -53,16 +53,16 @@ function Hero() {
               </div>
 
               {/* CTA BUTTONS */}
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <SignUpButton mode="modal">
-                  <Button size={"lg"}>
+                  <Button size={"lg"} className="w-full sm:w-auto transition-all hover:scale-105 duration-300 shadow-md hover:shadow-primary/50">
                     <MicIcon className="mr-2 size-5" />
                     Try voice agent
                   </Button>
                 </SignUpButton>
 
                 <SignUpButton mode="modal">
-                  <Button size={"lg"} variant={"outline"}>
+                  <Button size={"lg"} variant={"outline"} className="w-full sm:w-auto transition-all hover:scale-105 duration-300">
                     <CalendarIcon className="mr-2 size-5" />
                     Book appointment
                   </Button>
@@ -71,7 +71,7 @@ function Hero() {
 
               {/* USER TESTIMONIALS */}
               <div className="pt-8">
-                <div className="flex items-center gap-6">
+                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 justify-center lg:justify-start">
                   {/* USER AVATARS */}
                   <div className="flex -space-x-3">
                     <Image
@@ -112,8 +112,8 @@ function Hero() {
                   </div>
 
                   {/* RATING AND STATS */}
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-1 text-center sm:text-left">
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
                       <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <StarIcon
@@ -139,17 +139,17 @@ function Hero() {
 
             {/* RIGHT CONTENT - HERO IMAGE */}
 
-            <div className="relative lg:pl-8">
+            <div className="relative mt-8 lg:mt-0 lg:pl-8 flex justify-center">
               {/* GRADIENT ORBS */}
               <div className="absolute -top-4 -left-4 w-24 h-24 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl rotate-45 blur-xl"></div>
               <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-gradient-to-br from-primary/15 to-primary/5 rounded-full blur-2xl"></div>
 
               <Image
                 src={"/hero.png"}
-                alt="DentWise AI"
+                alt="Dent-Assist AI"
                 width={600}
                 height={600}
-                className="w-full h-auto"
+                className="w-full max-w-[280px] sm:max-w-[400px] lg:max-w-none h-auto"
               />
             </div>
           </div>

@@ -1,13 +1,13 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
+import { SettingsIcon } from "lucide-react";
 import AdminStats from "@/components/admin/AdminStats";
 import DoctorsManagement from "@/components/admin/DoctorsManagement";
 import RecentAppointments from "@/components/admin/RecentAppointments";
 import Navbar from "@/components/Navbar";
 import { useGetAppointments } from "@/hooks/use-appointment";
 import { useGetDoctors } from "@/hooks/use-doctors";
-import { useUser } from "@clerk/nextjs";
-import { SettingsIcon } from "lucide-react";
 
 function AdminDashboardClient() {
   const { user } = useUser();
@@ -21,7 +21,7 @@ function AdminDashboardClient() {
     activeDoctors: doctors.filter((doc) => doc.isActive).length,
     totalAppointments: appointments.length,
     completedAppointments: appointments.filter(
-      (appt) => appt.status === "COMPLETED"
+      (appt) => appt.status === "COMPLETED",
     ).length,
   };
 
@@ -30,10 +30,10 @@ function AdminDashboardClient() {
   return (
     <div>
       <Navbar />
-      <div className="max-w-7xl mx-auto px-6 py-8 pt-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pt-20 sm:pt-24">
         {/* ADMIN WELCOME SECTION */}
-        <div className="mb-12 flex items-center justify-between bg-gradient-to-br from-primary/10 via-primary/5 to-background rounded-3xl p-8 border border-primary/20">
-          <div className="space-y-4">
+        <div className="mb-8 sm:mb-12 flex flex-col sm:flex-row items-center justify-between gap-6 bg-gradient-to-br from-primary/10 via-primary/5 to-background rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-primary/20">
+          <div className="space-y-3 sm:space-y-4 text-center sm:text-left w-full">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
               <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
               <span className="text-sm font-medium text-primary">
@@ -41,10 +41,10 @@ function AdminDashboardClient() {
               </span>
             </div>
             <div>
-              <h1 className="text-4xl font-bold mb-2">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
                 Welcome back, {user?.firstName || "Admin"}!
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm sm:text-base">
                 Manage doctors, oversee appointments, and monitor your dental
                 practice performance.
               </p>

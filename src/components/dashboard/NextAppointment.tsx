@@ -1,8 +1,8 @@
-import { getUserAppointments } from "@/lib/actions/appointments";
 import { format, isAfter, isSameDay, parseISO } from "date-fns";
-import NoNextAppointments from "./NoNextAppointments";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { CalendarIcon, ClockIcon, UserIcon } from "lucide-react";
+import { getUserAppointments } from "@/lib/actions/appointments";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import NoNextAppointments from "./NoNextAppointments";
 
 async function NextAppointment() {
   const appointments = await getUserAppointments();
@@ -27,19 +27,19 @@ async function NextAppointment() {
   const isToday = isSameDay(appointmentDate, new Date());
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background hover:shadow-lg hover:shadow-primary/5 hover:border-primary/40 transition-all duration-300">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
           <CalendarIcon className="size-5 text-primary" />
           Next Appointment
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 sm:space-y-4">
         {/* Status Badge */}
         <div className="flex items-center justify-between">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-primary">
+            <span className="text-xs sm:text-sm font-medium text-primary">
               {isToday ? "Today" : "Upcoming"}
             </span>
           </div>
@@ -49,9 +49,9 @@ async function NextAppointment() {
         </div>
 
         {/* Appointment Details */}
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
               <UserIcon className="size-4 text-primary" />
             </div>
             <div>
@@ -65,7 +65,7 @@ async function NextAppointment() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
               <CalendarIcon className="size-4 text-primary" />
             </div>
             <div>
@@ -77,7 +77,7 @@ async function NextAppointment() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
               <ClockIcon className="size-4 text-primary" />
             </div>
             <div>
@@ -89,7 +89,7 @@ async function NextAppointment() {
 
         {/* More Appointments Count */}
         {upcomingAppointments.length > 1 && (
-          <p className="text-xs text-center text-muted-foreground">
+          <p className="text-xs text-center text-muted-foreground pt-2">
             +{upcomingAppointments.length - 1} more upcoming appointment
             {upcomingAppointments.length > 2 ? "s" : ""}
           </p>

@@ -1,55 +1,61 @@
-import AppointmentConfirmationEmail from "@/components/emails/AppointmentConfirmationEmail";
-import resend from "@/lib/resend";
 import { NextResponse } from "next/server";
+import NewAppointmentAdminEmail from "@/components/emails/NewAppointmentAdminEmail";
+import resend from "@/lib/resend";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const adminEmail = process.env.ADMIN_EMAIL;
+
+    if (!adminEmail) {
+      return NextResponse.json(
+        { error: "Admin email not configured" },
+        { status: 500 },
+      );
+    }
 
     const {
-      userEmail,
       doctorName,
+      patientName,
+      patientEmail,
+      patientPhone,
       appointmentDate,
       appointmentTime,
       appointmentType,
-      duration,
-      price,
     } = body;
 
-    // validate required fields
-    if (!userEmail || !doctorName || !appointmentDate || !appointmentTime) {
+    if (!doctorName || !patientName || !appointmentDate || !appointmentTime) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
       );
     }
 
-    // send the email
-    // do not use this in prod, only for testing purposes
     const { data, error } = await resend.emails.send({
       from: "Dent-Assist <no-reply@dev.emon.pro>",
-      to: [userEmail],
-      subject: "Appointment Confirmation - Dent-Assist",
-      react: AppointmentConfirmationEmail({
+      to: [adminEmail],
+      subject: `New Appointment: ${patientName} booked with ${doctorName}`,
+      react: NewAppointmentAdminEmail({
         doctorName,
+        patientName,
+        patientEmail: patientEmail || "N/A",
+        patientPhone: patientPhone || "N/A",
         appointmentDate,
         appointmentTime,
-        appointmentType,
-        duration,
-        price,
+        appointmentType: appointmentType || "Dental Checkup",
       }),
     });
 
     if (error) {
       console.error("Resend error:", error);
       return NextResponse.json(
-        { error: "Failed to send email" },
+        { error: "Failed to send admin notification" },
         { status: 500 },
       );
     }
 
     return NextResponse.json(
-      { message: "Email sent successfully", emailId: data?.id },
+      { message: "Admin notification sent successfully", emailId: data?.id },
       { status: 200 },
     );
   } catch (error) {
