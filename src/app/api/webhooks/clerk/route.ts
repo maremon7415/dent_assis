@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 import { defer } from "@/lib/defer";
 import { sendWelcomeEmailOnce } from "@/lib/email";
+import { describeForLog } from "@/lib/errors";
 import {
   type ClerkUserPayload,
   softDeleteUserByClerkId,
@@ -75,7 +76,9 @@ export async function POST(request: Request) {
         break; // acknowledge events we don't handle
     }
   } catch (error) {
-    console.error(`[clerk-webhook] ${evt.type} failed`, error);
+    console.error(
+      `[clerk-webhook] ${evt.type} failed: ${describeForLog(error)}`,
+    );
     // 500 makes Clerk retry; handlers are idempotent
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }

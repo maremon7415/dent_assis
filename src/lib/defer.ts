@@ -1,4 +1,5 @@
 import { after } from "next/server";
+import { describeForLog } from "./errors";
 
 /**
  * Run work after the response is sent (emails, notifications) so a slow provider never delays or
@@ -10,7 +11,7 @@ export function defer(label: string, task: () => Promise<unknown>): void {
     try {
       await task();
     } catch (error) {
-      console.error(`[defer] ${label} failed`, error);
+      console.error(`[defer] ${label} failed: ${describeForLog(error)}`);
     }
   };
   try {

@@ -1,6 +1,7 @@
 "use server";
 
 import { getCurrentUser } from "@/lib/auth";
+import { describeForLog } from "@/lib/errors";
 
 /**
  * Called by <UserSync /> after sign-in: makes sure the local user row exists (and admin promotion and
@@ -14,7 +15,7 @@ export async function syncUser(): Promise<{
     const user = await getCurrentUser();
     return user ? { id: user.id, role: user.role } : null;
   } catch (error) {
-    console.error("[syncUser] failed", error);
+    console.error(`[syncUser] failed: ${describeForLog(error)}`);
     return null;
   }
 }

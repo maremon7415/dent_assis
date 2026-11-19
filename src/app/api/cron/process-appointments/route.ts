@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCron } from "@/lib/cron-auth";
+import { describeForLog } from "@/lib/errors";
 import { processReminders } from "@/lib/reminders";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +26,9 @@ async function handle(request: Request) {
     const result = await processReminders();
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
-    console.error("[cron] process-appointments failed", error);
+    console.error(
+      `[cron] process-appointments failed: ${describeForLog(error)}`,
+    );
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
