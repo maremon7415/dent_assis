@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ClerkLoading,
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-} from "@clerk/nextjs";
+import { ClerkLoading, Show, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -41,7 +35,7 @@ function AuthActions({ stacked = false }: { stacked?: boolean }) {
           aria-hidden
         />
       </ClerkLoading>
-      <SignedOut>
+      <Show when="signed-out">
         <SignInButton mode="modal" forceRedirectUrl="/dashboard">
           <Button variant={stacked ? "outline" : "ghost"} size={size}>
             Sign in
@@ -50,12 +44,12 @@ function AuthActions({ stacked = false }: { stacked?: boolean }) {
         <SignUpButton mode="modal" forceRedirectUrl={BOOKING_PATH}>
           <Button size={size}>Book a visit</Button>
         </SignUpButton>
-      </SignedOut>
-      <SignedIn>
+      </Show>
+      <Show when="signed-in">
         <Button asChild size={size}>
           <Link href="/dashboard">Open portal</Link>
         </Button>
-      </SignedIn>
+      </Show>
     </>
   );
 }
