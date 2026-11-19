@@ -4,11 +4,13 @@
  *  2. Two patients race for OVERLAPPING slots with different starts/durations -> exactly one succeeds.
  *  3. A direct insert that skips the service layer still cannot reuse an active slotKey (P2002).
  *  4. Reschedule releases the old slot (someone else can then book it); cancel releases the new one.
+ *  5. One patient firing more parallel bookings than the per-patient cap gets exactly `cap` of them.
  * Creates its own throwaway patients (clerkId verify_*) and removes everything it created.
  *
  *   npx tsx prisma/scripts/verify-booking-concurrency.ts
  */
 import { PrismaClient } from "@prisma/client";
+import { siteConfig } from "@/config/site";
 import {
   cancelBooking,
   createBooking,
@@ -209,8 +211,59 @@ async function main() {
     );
   }
 
+  // 5. one patient fires more parallel bookings than the cap on distinct free slots -> exactly `cap` succeed
+  const cap = siteConfig.clinic.maxActiveBookingsPerPatient;
+  const greedy = await prisma.user.create({
+    data: {
+      clerkId: `${RUN}_cap`,
+      email: `${RUN}_cap@verify.invalid`,
+      firstName: "VerifyCap",
+    },
+  });
+  let capDate = "";
+  let capSlots: Awaited<ReturnType<typeof getSlotsForDay>> = [];
+  for (let d = 4; d < 30 && capSlots.length < (cap + 2) * 2; d++) {
+    capDate = addDaysToLocalDate(todayInClinic(), d);
+    if (capDate === date) continue;
+    capSlots = await getSlotsForDay(prisma, {
+      doctorId: doctor.id,
+      date: capDate,
+      serviceId: long.id,
+    });
+  }
+  // non-overlapping starts, so only the cap (not the patient overlap check) can refuse them
+  const picks: typeof capSlots = [];
+  for (const s of capSlots) {
+    const last = picks.at(-1);
+    if (!last || s.startsAt.getTime() >= last.endsAt.getTime()) picks.push(s);
+    if (picks.length === cap + 2) break;
+  }
+  const r5 = await Promise.allSettled(
+    picks.map((s) =>
+      createBooking({
+        userId: greedy.id,
+        doctorId: doctor.id,
+        serviceId: long.id,
+        date: capDate,
+        time: s.time,
+      }),
+    ),
+  );
+  const ok5 = r5.filter((r) => r.status === "fulfilled").length;
+  const codes5 = r5
+    .filter((r) => r.status === "rejected")
+    .map((r) => toFailure((r as PromiseRejectedResult).reason).code);
+  const capOk =
+    picks.length === cap + 2 &&
+    ok5 === cap &&
+    codes5.every((c) => c === "LIMIT_REACHED");
+  console.log(
+    `[patient cap]   ${picks.length} parallel bookings by one patient (cap ${cap}): ${ok5} succeeded, failed with ${[...new Set(codes5)].join(",")}`,
+  );
+
   const pass =
     releaseOk &&
+    capOk &&
     ok1 === 1 &&
     codes1.every((c) => c === "SLOT_TAKEN") &&
     (ok2 === -1 || ok2 === 1) &&

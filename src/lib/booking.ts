@@ -16,6 +16,7 @@ import {
   computeAvailableSlots,
   hasMinNotice,
   type Interval,
+  overlaps,
   type Slot,
   slotKeyFor,
 } from "./availability";
@@ -253,10 +254,64 @@ export interface CreateBookingParams {
   notes?: string | null;
 }
 
+/**
+ * Abuse guard for patient self-service: at most N bookings/cancellations per patient per window,
+ * counted from the appointments table (no in-memory state, so it holds across serverless instances).
+ */
+export async function assertPatientChangeRate(
+  db: Db,
+  userId: string,
+  now: Date,
+) {
+  const { maxPatientChangesPerWindow, changeWindowMinutes } = siteConfig.clinic;
+  const since = new Date(now.getTime() - changeWindowMinutes * 60_000);
+  const recent = await db.appointment.count({
+    where: {
+      userId,
+      OR: [
+        { createdAt: { gte: since } },
+        { cancelledAt: { gte: since }, cancelledBy: "PATIENT" },
+      ],
+    },
+  });
+  if (recent >= maxPatientChangesPerWindow) {
+    throw new AppError(
+      "RATE_LIMITED",
+      `You've made a lot of changes in the last ${changeWindowMinutes} minutes. Please wait a few minutes and try again, or call ${siteConfig.phone}.`,
+    );
+  }
+}
+
+/** Cap on upcoming visits one patient may hold. Run under the patient lock. */
+async function assertUnderActiveCap(db: Db, userId: string, now: Date) {
+  const cap = siteConfig.clinic.maxActiveBookingsPerPatient;
+  const active = await db.appointment.count({
+    where: {
+      userId,
+      status: { in: ACTIVE_STATUSES },
+      OR: [
+        { startsAt: { gt: now } },
+        // legacy rows without startsAt: anything from yesterday (clinic-local) on
+        { startsAt: null, date: { gte: new Date(now.getTime() - 864e5) } },
+      ],
+    },
+  });
+  if (active >= cap) {
+    throw new AppError(
+      "LIMIT_REACHED",
+      `You already have ${cap} upcoming visits. Cancel or reschedule one of them, or call ${siteConfig.phone}, to book another.`,
+    );
+  }
+}
+
 /** Validate the slot under lock and insert. Must run inside a transaction. */
 async function insertBooking(
   tx: Prisma.TransactionClient,
-  p: CreateBookingParams & { rescheduledFromId?: string },
+  p: CreateBookingParams & {
+    rescheduledFromId?: string;
+    /** Reschedule: keep the original booking's price snapshot and status. */
+    keep?: { priceCents: number | null; status: AppointmentStatus };
+  },
   now: Date,
 ) {
   const rules = clinicRules();
@@ -302,15 +357,33 @@ async function insertBooking(
         );
   }
 
-  const clash = await tx.appointment.findFirst({
+  // The patient's own overlapping visits, including legacy rows without startsAt (as the doctor check).
+  const mine = await tx.appointment.findMany({
     where: {
       userId: p.userId,
       status: { in: ACTIVE_STATUSES },
-      startsAt: { lt: slot.endsAt },
-      endsAt: { gt: slot.startsAt },
+      OR: [
+        { startsAt: { lt: slot.endsAt }, endsAt: { gt: slot.startsAt } },
+        {
+          startsAt: null,
+          date: {
+            gte: new Date(range.start.getTime() - 2 * 864e5),
+            lte: new Date(range.end.getTime() + 2 * 864e5),
+          },
+        },
+      ],
     },
-    select: { id: true },
+    select: {
+      startsAt: true,
+      endsAt: true,
+      date: true,
+      time: true,
+      duration: true,
+    },
   });
+  const clash = mine
+    .map(appointmentInterval)
+    .some((i) => i !== null && overlaps(i, slot));
   if (clash)
     throw new AppError(
       "CONFLICT",
@@ -329,8 +402,8 @@ async function insertBooking(
       ),
       startsAt: slot.startsAt,
       endsAt: slot.endsAt,
-      status: "CONFIRMED",
-      priceCents: service.priceCents,
+      status: p.keep?.status ?? "CONFIRMED",
+      priceCents: p.keep ? p.keep.priceCents : service.priceCents,
       reason: p.reason ?? service.name ?? "Consultation",
       notes: p.notes ?? null,
       slotKey: slotKeyFor(p.doctorId, slot.startsAt),
@@ -348,6 +421,9 @@ export async function createBooking(
 ) {
   return db.$transaction(async (tx) => {
     await lockKeys(tx, [`doctor:${p.doctorId}`, `patient:${p.userId}`]);
+    // Under the patient lock, so parallel requests cannot all pass the checks.
+    await assertPatientChangeRate(tx, p.userId, now);
+    await assertUnderActiveCap(tx, p.userId, now);
     return insertBooking(tx, p, now);
   }, TX_OPTIONS);
 }
@@ -381,6 +457,8 @@ export async function rescheduleBooking(
       `doctor:${current.doctorId}`,
       `patient:${p.userId}`,
     ]);
+    // A reschedule replaces a visit, so the active cap does not apply; the rate limit does.
+    await assertPatientChangeRate(tx, p.userId, now);
 
     // Re-read under lock: the status may have changed while we waited.
     const locked = await findOwned(tx, p.appointmentId, p.userId);
@@ -434,6 +512,7 @@ export async function rescheduleBooking(
         reason: locked.reason,
         notes: locked.notes,
         rescheduledFromId: locked.id,
+        keep: { priceCents: locked.priceCents, status: locked.status },
       },
       now,
     );
@@ -463,6 +542,7 @@ export async function cancelBooking(
     );
   }
   if (p.by === "PATIENT") {
+    if (p.userId) await assertPatientChangeRate(db, p.userId, now);
     const interval = appointmentInterval(appointment);
     if (
       !interval ||
