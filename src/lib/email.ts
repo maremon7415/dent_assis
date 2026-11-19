@@ -46,6 +46,10 @@ export interface SendEmailInput {
   react: ReactElement;
   /** Resend de-duplicates sends with the same key for 24h. */
   idempotencyKey?: string;
+  /** Template name for logs, e.g. "cancellation". Logs never carry the subject or recipients. */
+  template: string;
+  /** The appointment or user id the email is about, for logs. */
+  ref?: string;
 }
 
 export async function sendEmail({
@@ -53,15 +57,16 @@ export async function sendEmail({
   subject,
   react,
   idempotencyKey,
+  template,
+  ref,
 }: SendEmailInput): Promise<SendStatus> {
   const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean);
   if (recipients.length === 0) return "skipped";
+  const what = `${template}${ref ? ` for ${ref}` : ""}`;
 
   const resend = resendClient();
   if (!resend) {
-    console.info(
-      `[email] RESEND_API_KEY not set; skipped "${subject}" to ${recipients.length} recipient(s)`,
-    );
+    console.info(`[email] RESEND_API_KEY not set; skipped ${what}`);
     return "skipped";
   }
   try {
@@ -81,16 +86,14 @@ export async function sendEmail({
       idempotencyKey ? { idempotencyKey } : undefined,
     );
     if (error) {
-      console.error(
-        `[email] provider rejected "${subject}"`,
-        error.name,
-        error.message,
-      );
+      // the provider's message can quote recipients; the error name is enough to triage
+      console.error(`[email] provider rejected ${what}: ${error.name}`);
       return "failed";
     }
     return "sent";
   } catch (error) {
-    console.error(`[email] send failed for "${subject}"`, error);
+    const name = error instanceof Error ? error.name : typeof error;
+    console.error(`[email] send failed for ${what}: ${name}`);
     return "failed";
   }
 }
@@ -114,6 +117,8 @@ export async function sendWelcomeEmailOnce(
     subject: `Welcome to ${siteConfig.name}`,
     react: WelcomeEmail({ userName: user.firstName ?? undefined }),
     idempotencyKey: `welcome/${user.id}`,
+    template: "welcome",
+    ref: user.id,
   });
   if (status === "failed") {
     await prisma.user.update({
@@ -148,7 +153,8 @@ async function loadAppointment(id: string) {
     startsAt,
     date: formatClinicDate(startsAt),
     time: formatClinicTime(startsAt),
-    type: a.service?.name ?? a.reason ?? "Dental visit",
+    // Never the patient's free-text reason: it can hold health details and would land in subjects.
+    type: a.service?.name ?? "Consultation",
     patientName:
       [a.user.firstName, a.user.lastName].filter(Boolean).join(" ") ||
       "Patient",
@@ -173,6 +179,8 @@ export async function sendBookingEmails(appointmentId: string): Promise<void> {
         price: a.priceCents != null ? formatMoney(a.priceCents) : undefined,
       }),
       idempotencyKey: `booked/${a.id}`,
+      template: "booking",
+      ref: a.id,
     }),
     sendAdminNotification(v, "booked"),
   ]);
@@ -199,6 +207,8 @@ async function sendAdminNotification(
       kind,
     }),
     idempotencyKey: `admin-${kind}/${a.id}`,
+    template: `admin-${kind}`,
+    ref: a.id,
   });
 }
 
@@ -226,6 +236,8 @@ export async function sendRescheduleEmails(
         appointmentType: newV.type,
       }),
       idempotencyKey: `rescheduled/${a.id}`,
+      template: "reschedule",
+      ref: a.id,
     }),
     sendAdminNotification(newV, "rescheduled"),
   ]);
@@ -251,6 +263,8 @@ export async function sendCancellationEmail(
       reason: a.cancelledBy === "PATIENT" ? null : a.cancelReason,
     }),
     idempotencyKey: `cancelled/${a.id}`,
+    template: "cancellation",
+    ref: a.id,
   });
 }
 
@@ -276,5 +290,7 @@ export async function sendReminderEmail(
       window,
     }),
     idempotencyKey: `reminder-${window}/${a.id}`,
+    template: `reminder-${window}`,
+    ref: a.id,
   });
 }
