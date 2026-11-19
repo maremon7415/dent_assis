@@ -64,6 +64,12 @@ export function MarketingFooter() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
+                      // signed-in routes redirect to Clerk for visitors; don't prefetch them
+                      prefetch={
+                        ["/appointments", "/dashboard", "/voice"].includes(link.href)
+                          ? false
+                          : undefined
+                      }
                       className="focus-ring rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {link.label}
