@@ -72,7 +72,9 @@ export default async function ServicesPage() {
               you with the right dentist.
             </p>
             <Button asChild className="mt-5">
-              <Link href="/appointments">Book a visit</Link>
+              <Link prefetch={false} href="/appointments">
+                Book a visit
+              </Link>
             </Button>
           </div>
         ) : (

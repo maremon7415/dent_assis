@@ -55,7 +55,9 @@ export function ServicesTeaser({
                 You can still book a visit and tell us what you need.
               </p>
               <Button asChild className="mt-5">
-                <Link href="/appointments">Book a visit</Link>
+                <Link prefetch={false} href="/appointments">
+                  Book a visit
+                </Link>
               </Button>
             </div>
           ) : (

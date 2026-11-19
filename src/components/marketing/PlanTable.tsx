@@ -72,7 +72,9 @@ function PlanFallback() {
       <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
         {isSignedIn ? (
           <Button asChild>
-            <Link href="/dashboard">Open portal</Link>
+            <Link prefetch={false} href="/dashboard">
+              Open portal
+            </Link>
           </Button>
         ) : (
           <SignUpButton mode="modal" forceRedirectUrl="/appointments">

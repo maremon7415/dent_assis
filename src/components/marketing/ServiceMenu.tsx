@@ -86,6 +86,7 @@ export function ServiceMenu({
           </div>
           <div className="flex items-start justify-end">
             <Link
+              prefetch={false}
               href={bookingHref({ service: s.slug, doctor: doctorSlug })}
               className="focus-ring group inline-flex h-9 items-center rounded-md border border-input bg-card px-3.5 text-sm font-medium text-foreground transition-[background-color,border-color,transform] duration-150 ease-out hover:border-primary hover:bg-accent hover:text-accent-foreground active:scale-[0.97]"
             >

@@ -123,7 +123,9 @@ export function FinalCta() {
             size="lg"
             className="h-12 px-7 text-base active:scale-[0.97]"
           >
-            <Link href="/appointments">Book a visit</Link>
+            <Link prefetch={false} href="/appointments">
+              Book a visit
+            </Link>
           </Button>
           <Button
             asChild

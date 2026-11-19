@@ -45,7 +45,9 @@ export function Hero({
               size="lg"
               className="h-12 px-7 text-base active:scale-[0.97]"
             >
-              <Link href="/appointments">Book a visit</Link>
+              <Link prefetch={false} href="/appointments">
+                Book a visit
+              </Link>
             </Button>
             <Button
               asChild
@@ -53,7 +55,9 @@ export function Hero({
               variant="outline"
               className="h-12 px-7 text-base active:scale-[0.97]"
             >
-              <Link href="/voice">Try the AI assistant</Link>
+              <Link prefetch={false} href="/voice">
+                Try the AI assistant
+              </Link>
             </Button>
           </div>
           {dentistCount > 0 && serviceCount > 0 ? (

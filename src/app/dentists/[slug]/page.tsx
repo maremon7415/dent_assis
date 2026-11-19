@@ -105,7 +105,7 @@ export default async function DentistProfilePage({ params }: Props) {
                   size="lg"
                   className="mt-5 h-11 active:scale-[0.97] lg:hidden"
                 >
-                  <Link href={bookingHref({ doctor: d.slug })}>
+                  <Link prefetch={false} href={bookingHref({ doctor: d.slug })}>
                     Book with {short}
                   </Link>
                 </Button>
@@ -252,7 +252,7 @@ export default async function DentistProfilePage({ params }: Props) {
                 size="lg"
                 className="mt-5 h-12 w-full text-base active:scale-[0.97]"
               >
-                <Link href={bookingHref({ doctor: d.slug })}>
+                <Link prefetch={false} href={bookingHref({ doctor: d.slug })}>
                   Book with {short}
                 </Link>
               </Button>

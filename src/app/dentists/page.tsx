@@ -125,7 +125,10 @@ export default async function DentistsPage() {
                       </Button>
                     ) : null}
                     <Button asChild className="active:scale-[0.97]">
-                      <Link href={bookingHref({ doctor: d.slug })}>
+                      <Link
+                        prefetch={false}
+                        href={bookingHref({ doctor: d.slug })}
+                      >
                         Book with {shortDoctorName(d.name)}
                       </Link>
                     </Button>

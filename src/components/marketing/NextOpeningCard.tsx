@@ -97,6 +97,7 @@ function Filled({ opening }: { opening: NextOpening }) {
             style={{ animationDelay: `${180 + i * 45}ms` }}
           >
             <Link
+              prefetch={false}
               href={`${base}&date=${date}&time=${s.time}`}
               className={cn(
                 "focus-ring flex h-10 items-center justify-center rounded-lg border text-sm font-medium tabular-nums transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[0.97]",
@@ -119,6 +120,7 @@ function Filled({ opening }: { opening: NextOpening }) {
           Clinic local time.
         </p>
         <Link
+          prefetch={false}
           href={base}
           className="focus-ring shrink-0 rounded-sm font-medium text-primary underline-offset-4 hover:underline"
         >
@@ -146,6 +148,7 @@ function Empty() {
         the weeks ahead.
       </p>
       <Link
+        prefetch={false}
         href="/appointments"
         className="focus-ring mt-5 inline-flex h-10 items-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground transition-[background-color,transform] duration-150 ease-out hover:bg-primary/90 active:scale-[0.97]"
       >

@@ -89,7 +89,7 @@ export function AssistantBand() {
               size="lg"
               className="h-12 px-7 text-base active:scale-[0.97]"
             >
-              <Link href="/voice">
+              <Link prefetch={false} href="/voice">
                 <AudioLines aria-hidden />
                 Try the AI assistant
               </Link>
