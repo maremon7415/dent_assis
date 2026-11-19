@@ -96,9 +96,17 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to view the 
 
 ### Authorization
 - Identity: Clerk. `src/lib/auth.ts` exposes `getCurrentUser()`, `requireUser()`, `requireAdmin()`. The local `User`
-  row is created on first sign-in (and by the Clerk webhook), whichever comes first.
+  row is created on first sign-in (and by the Clerk webhook), whichever comes first, and only for a verified primary
+  email. If a new Clerk account arrives with an email already on a row, the row is re-linked only when Clerk confirms
+  the old account is deleted; the role is then reset to `PATIENT` (and re-checked against `ADMIN_EMAILS`).
 - Roles live in the database (`User.role`: `PATIENT` | `ADMIN`). `ADMIN_EMAILS` only bootstraps: a listed, verified email
-  is promoted on sync. Promotion is one-way; demote by updating the row.
+  is promoted on sync. Promotion is one-way: **removing an email from `ADMIN_EMAILS` does not demote anyone.**
+- Revoking an admin (takes effect on their next request):
+  1. Remove the email from `ADMIN_EMAILS` / `ADMIN_EMAIL` locally and in the deployed environment (otherwise their next
+     sign-in promotes them again).
+  2. Run `npm run admin:revoke -- someone@clinic.example` against that environment's `DATABASE_URL`. It sets the role
+     to `PATIENT`, and refuses while the email is still listed in the environment it sees. The equivalent SQL is
+     `UPDATE users SET role = 'PATIENT' WHERE email = 'someone@clinic.example' AND role = 'ADMIN';`
 - Every server action checks the caller itself. Patient actions only read/change the caller's rows; admin actions
   (`admin*` in `src/lib/actions/admin.ts`) require `ADMIN`. `src/proxy.ts` only redirects signed-out visitors.
 - Server actions return `ActionResult<T>` (`{ ok: true, data } | { ok: false, code, error, fieldErrors? }`) instead of

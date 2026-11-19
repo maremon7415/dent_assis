@@ -11,6 +11,10 @@ export type ErrorCode =
   | "CONFLICT"
   | "SLOT_TAKEN"
   | "TOO_LATE"
+  /** The patient already holds the maximum number of upcoming visits. */
+  | "LIMIT_REACHED"
+  /** Too many bookings/cancellations in a short time. */
+  | "RATE_LIMITED"
   | "INTERNAL";
 
 export type ActionResult<T> =

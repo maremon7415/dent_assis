@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { cancelBooking } from "@/lib/booking";
 import { defer } from "@/lib/defer";
 import { sendCancellationEmail } from "@/lib/email";
-import { toFailure } from "@/lib/errors";
+import { type ErrorCode, toFailure } from "@/lib/errors";
 import { cancelSchema } from "@/lib/validation";
 
 const STATUS: Record<string, number> = {
@@ -15,8 +15,10 @@ const STATUS: Record<string, number> = {
   CONFLICT: 409,
   TOO_LATE: 409,
   SLOT_TAKEN: 409,
+  LIMIT_REACHED: 409,
+  RATE_LIMITED: 429,
   INTERNAL: 500,
-};
+} satisfies Record<ErrorCode, number>;
 
 /**
  * POST /api/appointments/cancel  { appointmentId, reason? }

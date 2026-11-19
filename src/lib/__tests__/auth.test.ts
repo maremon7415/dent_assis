@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const clerk = vi.hoisted(() => ({ auth: vi.fn(), currentUser: vi.fn() }));
 const db = vi.hoisted(() => ({
-  user: { findUnique: vi.fn(), upsert: vi.fn(), update: vi.fn() },
+  user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
 }));
 
 vi.mock("@clerk/nextjs/server", () => clerk);
+vi.mock("../clerk-account", () => ({ clerkAccountExists: vi.fn() }));
 vi.mock("../prisma", () => ({ prisma: db }));
 vi.mock("../email", () => ({ sendWelcomeEmailOnce: vi.fn() }));
 vi.mock("../defer", () => ({ defer: vi.fn() }));
@@ -26,6 +27,8 @@ const baseUser = {
   id: "u1",
   clerkId: "clerk_1",
   email: "pat@example.com",
+  firstName: "Pat",
+  lastName: "Lee",
   role: "PATIENT" as const,
   deletedAt: null,
   welcomeEmailSentAt: new Date(),
@@ -109,7 +112,6 @@ describe("admin bootstrap from ADMIN_EMAILS", () => {
     clerk.auth.mockResolvedValue({ userId: "clerk_1" });
     db.user.findUnique.mockResolvedValue(baseUser);
     clerk.currentUser.mockResolvedValue(clerkUser("pat@example.com", true));
-    db.user.upsert.mockResolvedValue(baseUser);
     db.user.update.mockResolvedValue({ ...baseUser, role: "ADMIN" });
     await expect(requireAdmin()).resolves.toMatchObject({ role: "ADMIN" });
     expect(db.user.update).toHaveBeenCalledWith({
@@ -123,7 +125,6 @@ describe("admin bootstrap from ADMIN_EMAILS", () => {
     clerk.auth.mockResolvedValue({ userId: "clerk_1" });
     db.user.findUnique.mockResolvedValue(baseUser);
     clerk.currentUser.mockResolvedValue(clerkUser("pat@example.com", false));
-    db.user.upsert.mockResolvedValue(baseUser);
     await expect(requireAdmin()).rejects.toBeInstanceOf(ForbiddenError);
     expect(db.user.update).not.toHaveBeenCalled();
   });
@@ -132,13 +133,13 @@ describe("admin bootstrap from ADMIN_EMAILS", () => {
     clerk.auth.mockResolvedValue({ userId: "clerk_1" });
     db.user.findUnique.mockResolvedValue(null);
     clerk.currentUser.mockResolvedValue(clerkUser("Pat@Example.com"));
-    db.user.upsert.mockResolvedValue({ ...baseUser, welcomeEmailSentAt: null });
+    db.user.create.mockResolvedValue({ ...baseUser, welcomeEmailSentAt: null });
     await expect(getCurrentUser()).resolves.toMatchObject({ id: "u1" });
-    expect(db.user.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { clerkId: "clerk_1" },
-        create: expect.objectContaining({ email: "pat@example.com" }),
+    expect(db.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        clerkId: "clerk_1",
+        email: "pat@example.com",
       }),
-    );
+    });
   });
 });

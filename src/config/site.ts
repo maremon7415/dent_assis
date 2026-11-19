@@ -12,7 +12,9 @@ export const siteConfig = {
   emailFrom: process.env.EMAIL_FROM ?? "Lumadent <no-reply@lumadent.app>",
   supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "care@lumadent.app",
   phone: process.env.NEXT_PUBLIC_CLINIC_PHONE ?? "+1 (555) 010-2040",
-  address: process.env.NEXT_PUBLIC_CLINIC_ADDRESS ?? "128 Harbor Street, Suite 4, Springfield",
+  address:
+    process.env.NEXT_PUBLIC_CLINIC_ADDRESS ??
+    "128 Harbor Street, Suite 4, Springfield",
   clinic: {
     /** IANA zone every appointment date/time is interpreted in. */
     timezone: process.env.CLINIC_TIMEZONE ?? "UTC",
@@ -24,6 +26,11 @@ export const siteConfig = {
     bookingWindowDays: 30,
     /** Minimum notice before an appointment can be booked, moved or cancelled online. */
     minNoticeHours: 2,
+    /** Upcoming (pending or confirmed) visits one patient may hold at once. */
+    maxActiveBookingsPerPatient: 3,
+    /** Abuse guard: at most this many online bookings/cancellations per patient per window. */
+    maxPatientChangesPerWindow: 10,
+    changeWindowMinutes: 10,
   },
 } as const;
 

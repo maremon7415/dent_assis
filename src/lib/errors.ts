@@ -59,6 +59,33 @@ export function isPrismaUniqueViolation(
     : String(target ?? "").includes(field);
 }
 
+/**
+ * A log line for an unexpected error without personal data. Prisma messages and meta echo the query
+ * arguments (health-profile fields included), so Prisma errors are logged by name and code only;
+ * other errors by name and the first line of their message, shortened.
+ */
+export function describeForLog(error: unknown): string {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError ||
+    error instanceof Prisma.PrismaClientUnknownRequestError ||
+    error instanceof Prisma.PrismaClientValidationError ||
+    error instanceof Prisma.PrismaClientInitializationError ||
+    error instanceof Prisma.PrismaClientRustPanicError
+  ) {
+    const code = "code" in error && error.code ? ` ${String(error.code)}` : "";
+    const errorCode =
+      "errorCode" in error && error.errorCode
+        ? ` ${String(error.errorCode)}`
+        : "";
+    return `${error.name}${code}${errorCode}`;
+  }
+  if (error instanceof Error) {
+    const firstLine = (error.message.split("\n")[0] ?? "").slice(0, 120);
+    return `${error.name}: ${firstLine}`;
+  }
+  return typeof error;
+}
+
 /** Map any thrown value to a safe, user-facing failure. Internals are logged, never returned. */
 export function toFailure(
   error: unknown,
@@ -104,7 +131,7 @@ export function toFailure(
   ) {
     return { ok: false, code: "NOT_FOUND", error: "Not found." };
   }
-  console.error("[action] unexpected error", error);
+  console.error(`[action] unexpected error: ${describeForLog(error)}`);
   return {
     ok: false,
     code: "INTERNAL",

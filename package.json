@@ -15,7 +15,8 @@
     "db:constraints": "prisma db execute --file prisma/sql/constraints.sql --schema prisma/schema.prisma",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:demo": "tsx prisma/seed.ts --demo",
-    "test:e2e": "playwright test --trace off"
+    "test:e2e": "playwright test --trace off",
+    "admin:revoke": "tsx prisma/scripts/admin-revoke.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "7.9.24",
