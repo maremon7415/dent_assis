@@ -12,7 +12,9 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 const isSignedInArea = createRouteMatcher([
   "/dashboard(.*)",
   "/appointments(.*)",
+  "/visits(.*)",
   "/profile(.*)",
+  "/pro",
   "/voice(.*)",
   "/admin(.*)",
 ]);
