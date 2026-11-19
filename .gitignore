@@ -51,3 +51,8 @@ next-env.d.ts
 
 # agent worktrees
 .claude/worktrees/
+
+# playwright
+/e2e/.auth/
+/e2e/.results/
+/playwright-report/
