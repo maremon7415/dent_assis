@@ -36,7 +36,7 @@ export function HowItWorks() {
         <div className="relative mt-14">
           <span
             aria-hidden
-            className="absolute top-6 right-[16%] left-[16%] hidden border-t border-dashed border-input md:block"
+            className="absolute top-6 right-[16%] left-[16%] hidden border-t border-dashed border-border md:block"
           />
           <ol className="relative grid gap-10 md:grid-cols-3 md:gap-8">
             {STEPS.map((s, i) => (

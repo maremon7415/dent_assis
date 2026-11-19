@@ -11,6 +11,12 @@ export const siteConfig = {
   /** Sender used for transactional email; the domain must be verified in Resend. */
   emailFrom: process.env.EMAIL_FROM ?? "Lumadent <no-reply@lumadent.app>",
   supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "care@lumadent.app",
+  /**
+   * Clerk Billing (AI assistant plans). Off until billing is enabled and plans are published in the
+   * Clerk dashboard; while off, the pricing pages show a plain next step instead of mounting Clerk's
+   * PricingTable (which errors when billing is disabled).
+   */
+  billingEnabled: process.env.NEXT_PUBLIC_CLERK_BILLING_ENABLED === "true",
   phone: process.env.NEXT_PUBLIC_CLINIC_PHONE ?? "+1 (555) 010-2040",
   address:
     process.env.NEXT_PUBLIC_CLINIC_ADDRESS ??

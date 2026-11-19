@@ -51,14 +51,14 @@ export function ServiceMenu({
               </h3>
               <span
                 aria-hidden
-                className="hidden min-w-8 flex-1 translate-y-[-0.3em] border-b border-dotted border-input sm:block"
+                className="hidden min-w-8 flex-1 translate-y-[-0.3em] border-b border-dotted border-border sm:block"
               />
               <p
                 data-numeric
                 className="hidden shrink-0 text-sm text-muted-foreground sm:block"
               >
                 {formatDuration(s.durationMinutes)}
-                <span aria-hidden className="mx-2 text-input">
+                <span aria-hidden className="mx-2 text-border">
                   /
                 </span>
                 <span className="font-semibold text-foreground">
@@ -76,7 +76,7 @@ export function ServiceMenu({
               className="mt-1 text-sm text-muted-foreground sm:hidden"
             >
               {formatDuration(s.durationMinutes)}
-              <span aria-hidden className="mx-2 text-input">
+              <span aria-hidden className="mx-2 text-border">
                 /
               </span>
               <span className="font-semibold text-foreground">

@@ -49,49 +49,51 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
 
 /**
  * Signed-in patient portal frame.
- * Desktop (lg+): fixed left rail. Phones and tablets: slim top bar plus a bottom tab bar.
+ * Desktop (lg+): sticky left rail in a full-height column. Phones and tablets: slim top bar plus a bottom tab bar.
  * Content sits in `<main id="main">` with a 72rem max width and consistent padding.
  */
 export function AppShell({ children, isAdmin = false }: AppShellProps) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-background lg:flex">
       <SkipLink />
 
       {/* Desktop rail */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
-        <div className="flex h-(--header-height) items-center px-5">
-          <Logo size="md" href="/dashboard" markVariant="tile" />
-        </div>
-        <nav aria-label="Portal" className="flex-1 overflow-y-auto px-3 py-4">
-          <ul className="space-y-1">
-            {portalNav.map((item) => (
-              <li key={item.href}>
+      <div className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:block">
+        <aside className="sticky top-0 z-30 flex h-dvh flex-col">
+          <div className="flex h-(--header-height) items-center px-5">
+            <Logo size="md" href="/dashboard" markVariant="tile" />
+          </div>
+          <nav aria-label="Portal" className="flex-1 overflow-y-auto px-3 py-4">
+            <ul className="space-y-1">
+              {portalNav.map((item) => (
+                <li key={item.href}>
+                  <SidebarLink
+                    item={item}
+                    active={isActivePath(pathname, item.href)}
+                  />
+                </li>
+              ))}
+            </ul>
+            {isAdmin ? (
+              <div className="mt-6 border-t border-sidebar-border pt-4">
+                <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">
+                  Clinic
+                </p>
                 <SidebarLink
-                  item={item}
-                  active={isActivePath(pathname, item.href)}
+                  item={adminNavItem}
+                  active={isActivePath(pathname, adminNavItem.href)}
                 />
-              </li>
-            ))}
-          </ul>
-          {isAdmin ? (
-            <div className="mt-6 border-t border-sidebar-border pt-4">
-              <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">
-                Clinic
-              </p>
-              <SidebarLink
-                item={adminNavItem}
-                active={isActivePath(pathname, adminNavItem.href)}
-              />
-            </div>
-          ) : null}
-        </nav>
-        <div className="flex items-center justify-between border-t border-sidebar-border px-4 py-3">
-          <UserButton appearance={userButtonAppearance} />
-          <ThemeToggle />
-        </div>
-      </aside>
+              </div>
+            ) : null}
+          </nav>
+          <div className="flex items-center justify-between border-t border-sidebar-border px-4 py-3">
+            <UserButton appearance={userButtonAppearance} />
+            <ThemeToggle />
+          </div>
+        </aside>
+      </div>
 
       {/* Phone and tablet top bar */}
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/90 px-4 backdrop-blur-lg lg:hidden">
@@ -119,7 +121,7 @@ export function AppShell({ children, isAdmin = false }: AppShellProps) {
         </div>
       </header>
 
-      <div className="lg:pl-64">
+      <div className="min-w-0 lg:flex-1">
         <main
           id="main"
           tabIndex={-1}

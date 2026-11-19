@@ -61,34 +61,40 @@ function Row({
   sub?: ReactNode;
   onChange?: () => void;
 }) {
+  // A <dl> may only hold <div>s of <dt>/<dd>, so "Change" lives inside the <dd> and is pinned to the
+  // row's top right.
   return (
-    <div className="flex items-start justify-between gap-3 py-3.5">
-      <div className="min-w-0">
-        <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-        <dd
-          className={cn(
-            "mt-0.5 text-sm",
-            value ? "font-semibold text-foreground" : "text-muted-foreground",
-          )}
-        >
-          {value ?? "Not chosen yet"}
-          {value && sub ? (
-            <span className="block font-normal text-muted-foreground">
-              {sub}
-            </span>
-          ) : null}
-        </dd>
-      </div>
-      {value && onChange ? (
-        <button
-          type="button"
-          onClick={onChange}
-          className="focus-ring shrink-0 rounded text-sm font-medium text-primary underline-offset-4 hover:underline"
-        >
-          Change
-          <span className="sr-only"> {label.toLowerCase()}</span>
-        </button>
-      ) : null}
+    <div className="relative py-3.5">
+      <dt
+        className={cn(
+          "text-xs font-medium text-muted-foreground",
+          value && onChange && "pr-20",
+        )}
+      >
+        {label}
+      </dt>
+      <dd
+        className={cn(
+          "mt-0.5 min-w-0 text-sm",
+          value ? "font-semibold text-foreground" : "text-muted-foreground",
+          value && onChange && "pr-20",
+        )}
+      >
+        {value ?? "Not chosen yet"}
+        {value && sub ? (
+          <span className="block font-normal text-muted-foreground">{sub}</span>
+        ) : null}
+        {value && onChange ? (
+          <button
+            type="button"
+            onClick={onChange}
+            className="focus-ring absolute top-3.5 right-0 rounded text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Change
+            <span className="sr-only"> {label.toLowerCase()}</span>
+          </button>
+        ) : null}
+      </dd>
     </div>
   );
 }

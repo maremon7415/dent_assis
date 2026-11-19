@@ -52,6 +52,11 @@ function NoPlans() {
  * (or throws), so after a grace period an empty container falls back to a contact message.
  */
 export function PlansTable() {
+  if (!siteConfig.billingEnabled) return <NoPlans />;
+  return <ClerkPlansTable />;
+}
+
+function ClerkPlansTable() {
   const ref = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<"loading" | "ready" | "empty">("loading");
 

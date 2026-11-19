@@ -11,6 +11,18 @@ import { errorMessage, Panel, WEEK_ORDER, WEEKDAYS } from "./shared";
 
 type Win = { key: string; weekday: number; startTime: string; endTime: string };
 
+/**
+ * `<input type="time">` can't hold "24:00", which the server uses for a window that runs to midnight.
+ * The editor shows a stored "24:00" as 23:59 and saves an entered 23:59 end as "24:00".
+ */
+export const END_OF_DAY = "24:00";
+export function endTimeToInput(t: string): string {
+  return t === END_OF_DAY ? "23:59" : t;
+}
+export function endTimeFromInput(t: string): string {
+  return t === "23:59" ? END_OF_DAY : t;
+}
+
 let counter = 0;
 const nextKey = () => `w${++counter}`;
 
@@ -119,7 +131,7 @@ export function ScheduleEditor({ doctor }: { doctor: AdminDoctorDTO }) {
   return (
     <Panel
       title="Weekly schedule"
-      description="Working windows in clinic time. Add two windows on a day for a lunch gap. Existing appointments are not changed."
+      description="Working windows in clinic time. Add two windows on a day for a lunch gap; end at 23:59 to run to midnight. Existing appointments are not changed."
     >
       <ul className="divide-y">
         {WEEK_ORDER.map((weekday) => {
@@ -129,12 +141,12 @@ export function ScheduleEditor({ doctor }: { doctor: AdminDoctorDTO }) {
           return (
             <li
               key={weekday}
-              className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:gap-4"
+              className="flex flex-col gap-2 py-3 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-4"
             >
               <p className="w-28 shrink-0 pt-1.5 text-sm font-medium">
                 {WEEKDAYS[weekday]}
               </p>
-              <div className="min-w-0 flex-1 space-y-2">
+              <div className="min-w-fit flex-1 space-y-2">
                 {dayWins.length === 0 ? (
                   <p className="pt-1.5 text-sm text-muted-foreground">Closed</p>
                 ) : (
@@ -150,7 +162,7 @@ export function ScheduleEditor({ doctor }: { doctor: AdminDoctorDTO }) {
                           }
                           aria-label={`${WEEKDAYS[weekday]} start`}
                           aria-invalid={!!errors[w.key]}
-                          className="w-28 sm:w-32"
+                          className="w-32 shrink-0"
                         />
                         <span className="text-muted-foreground" aria-hidden>
                           to
@@ -158,13 +170,15 @@ export function ScheduleEditor({ doctor }: { doctor: AdminDoctorDTO }) {
                         <Input
                           type="time"
                           step={900}
-                          value={w.endTime}
+                          value={endTimeToInput(w.endTime)}
                           onChange={(e) =>
-                            patch(w.key, { endTime: e.target.value })
+                            patch(w.key, {
+                              endTime: endTimeFromInput(e.target.value),
+                            })
                           }
                           aria-label={`${WEEKDAYS[weekday]} end`}
                           aria-invalid={!!errors[w.key]}
-                          className="w-28 sm:w-32"
+                          className="w-32 shrink-0"
                         />
                         <Button
                           type="button"
@@ -182,6 +196,10 @@ export function ScheduleEditor({ doctor }: { doctor: AdminDoctorDTO }) {
                           role="alert"
                         >
                           {errors[w.key]}
+                        </p>
+                      ) : w.endTime === END_OF_DAY ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Runs to midnight
                         </p>
                       ) : null}
                     </div>

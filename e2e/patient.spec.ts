@@ -95,12 +95,15 @@ test.describe
       await moveButton.click();
       await expect(move).toBeHidden();
 
-      // The old visit now reads "Moved"; the new one is the only upcoming visit with actions.
-      await expect(page.getByText("Moved to")).toBeVisible();
-      const upcoming = page.getByRole("listitem").filter({
-        has: page.getByRole("button", { name: "Reschedule" }),
-      });
+      // The new time is the only upcoming visit; the old one moves to Past and says where it went.
+      const upcoming = page.getByRole("listitem").filter({ hasText: note });
       await expect(upcoming).toHaveCount(1);
+      await expect(
+        upcoming.getByRole("button", { name: "Reschedule" }),
+      ).toBeEnabled();
+      await page.getByRole("tab", { name: /past/i }).click();
+      await expect(page.getByText("Moved to")).toBeVisible();
+      await page.getByRole("tab", { name: /upcoming/i }).click();
 
       await upcoming.getByRole("button", { name: "Cancel" }).click();
       const confirm = page.getByRole("alertdialog", {
@@ -109,14 +112,11 @@ test.describe
       await confirm.getByLabel(/reason/i).fill(`Travelling ${run.runId}`);
       await confirm.getByRole("button", { name: "Cancel visit" }).click();
       await expect(confirm).toBeHidden();
+      await expect(page.getByText("No upcoming visits")).toBeVisible();
+      await page.getByRole("tab", { name: /past/i }).click();
       await expect(
         page.getByText(`You cancelled: Travelling ${run.runId}`),
       ).toBeVisible();
-      await expect(
-        page
-          .getByRole("listitem")
-          .filter({ has: page.getByRole("button", { name: "Reschedule" }) }),
-      ).toHaveCount(0);
     });
 
     test.describe("another patient", () => {

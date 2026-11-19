@@ -97,7 +97,7 @@ test.describe
       test.use({ storageState: storageStatePath("patient") });
 
       test("reads the dentist's note and leaves a review", async ({ page }) => {
-        await page.goto("/visits");
+        await page.goto("/visits?tab=past");
         const card = page.getByRole("listitem").filter({ hasText: summary });
         await expect(card).toHaveCount(1);
         await expect(card.getByText("Dentist's note")).toBeVisible();

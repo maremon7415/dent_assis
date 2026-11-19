@@ -28,7 +28,7 @@
   --accent-foreground: #0b3d37;
 
   /* Status */
-  --destructive: #b5432f; /* coral, text-strength */
+  --destructive: #a83c29; /* coral, text-strength: >= 4.5:1 on its own 12% tint */
   --destructive-foreground: #fff8f6;
   --success: #1d7348;
   --success-foreground: #f3fbf6;
@@ -45,7 +45,8 @@
 
   /* Lines */
   --border: #dddad0;
-  --input: #cfccc2;
+  /* Form-field and control outlines: >= 3:1 on background and card (WCAG 1.4.11). Cards keep --border. */
+  --input: #8a8577;
   --ring: #0b6b66;
 
   /* Data */
@@ -70,12 +71,24 @@
   --shadow-color: 186 50% 12%;
   --shadow-2xs: 0 1px 1px hsl(var(--shadow-color) / 0.05);
   --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.06);
-  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 2px 6px -2px hsl(var(--shadow-color) / 0.08);
-  --shadow: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 4px 12px -4px hsl(var(--shadow-color) / 0.1);
-  --shadow-md: 0 2px 4px hsl(var(--shadow-color) / 0.05), 0 8px 20px -8px hsl(var(--shadow-color) / 0.14);
-  --shadow-lg: 0 2px 6px hsl(var(--shadow-color) / 0.05), 0 16px 36px -14px hsl(var(--shadow-color) / 0.18);
-  --shadow-xl: 0 4px 10px hsl(var(--shadow-color) / 0.06), 0 28px 56px -20px hsl(var(--shadow-color) / 0.22);
-  --shadow-2xl: 0 8px 16px hsl(var(--shadow-color) / 0.06), 0 40px 80px -24px hsl(var(--shadow-color) / 0.28);
+  --shadow-sm:
+    0 1px 2px hsl(var(--shadow-color) / 0.06), 0 2px 6px -2px
+    hsl(var(--shadow-color) / 0.08);
+  --shadow:
+    0 1px 2px hsl(var(--shadow-color) / 0.06), 0 4px 12px -4px
+    hsl(var(--shadow-color) / 0.1);
+  --shadow-md:
+    0 2px 4px hsl(var(--shadow-color) / 0.05), 0 8px 20px -8px
+    hsl(var(--shadow-color) / 0.14);
+  --shadow-lg:
+    0 2px 6px hsl(var(--shadow-color) / 0.05), 0 16px 36px -14px
+    hsl(var(--shadow-color) / 0.18);
+  --shadow-xl:
+    0 4px 10px hsl(var(--shadow-color) / 0.06), 0 28px 56px -20px
+    hsl(var(--shadow-color) / 0.22);
+  --shadow-2xl:
+    0 8px 16px hsl(var(--shadow-color) / 0.06), 0 40px 80px -24px
+    hsl(var(--shadow-color) / 0.28);
 
   --tracking-normal: 0em;
   --spacing: 0.25rem;
@@ -116,7 +129,7 @@
   --enamel: #f6f4ee;
 
   --border: #24434a;
-  --input: #2d4f55;
+  --input: #557a7f;
   --ring: #4ccbb8;
 
   --chart-1: #4ccbb8;
@@ -137,12 +150,24 @@
   --shadow-color: 190 60% 3%;
   --shadow-2xs: 0 1px 1px hsl(var(--shadow-color) / 0.3);
   --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.35);
-  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.35), 0 2px 6px -2px hsl(var(--shadow-color) / 0.4);
-  --shadow: 0 1px 2px hsl(var(--shadow-color) / 0.35), 0 4px 12px -4px hsl(var(--shadow-color) / 0.45);
-  --shadow-md: 0 2px 4px hsl(var(--shadow-color) / 0.35), 0 8px 20px -8px hsl(var(--shadow-color) / 0.5);
-  --shadow-lg: 0 2px 6px hsl(var(--shadow-color) / 0.35), 0 16px 36px -14px hsl(var(--shadow-color) / 0.55);
-  --shadow-xl: 0 4px 10px hsl(var(--shadow-color) / 0.4), 0 28px 56px -20px hsl(var(--shadow-color) / 0.6);
-  --shadow-2xl: 0 8px 16px hsl(var(--shadow-color) / 0.4), 0 40px 80px -24px hsl(var(--shadow-color) / 0.7);
+  --shadow-sm:
+    0 1px 2px hsl(var(--shadow-color) / 0.35), 0 2px 6px -2px
+    hsl(var(--shadow-color) / 0.4);
+  --shadow:
+    0 1px 2px hsl(var(--shadow-color) / 0.35), 0 4px 12px -4px
+    hsl(var(--shadow-color) / 0.45);
+  --shadow-md:
+    0 2px 4px hsl(var(--shadow-color) / 0.35), 0 8px 20px -8px
+    hsl(var(--shadow-color) / 0.5);
+  --shadow-lg:
+    0 2px 6px hsl(var(--shadow-color) / 0.35), 0 16px 36px -14px
+    hsl(var(--shadow-color) / 0.55);
+  --shadow-xl:
+    0 4px 10px hsl(var(--shadow-color) / 0.4), 0 28px 56px -20px
+    hsl(var(--shadow-color) / 0.6);
+  --shadow-2xl:
+    0 8px 16px hsl(var(--shadow-color) / 0.4), 0 40px 80px -24px
+    hsl(var(--shadow-color) / 0.7);
   --grid-line: hsl(170 40% 80% / 0.05);
 }
 
@@ -285,14 +310,19 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* `text-wrap: balance|pretty` is a shorthand that also resets text-wrap-mode to `wrap`, which
+     cancels a parent's `white-space: nowrap` (it wrapped "11:00 AM" in the admin schedule). Keep
+     the mode inherited; the explicit `inherit` also stops the minifier folding these back into it. */
   h1,
   h2,
   h3 {
-    text-wrap: balance;
+    text-wrap-mode: inherit;
+    text-wrap-style: balance;
   }
 
   p {
-    text-wrap: pretty;
+    text-wrap-mode: inherit;
+    text-wrap-style: pretty;
   }
 
   /* Pointer cursor for anything clickable */
@@ -304,7 +334,8 @@
   /* Scrollbars themed from the palette */
   * {
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in oklab, var(--foreground) 22%, transparent) transparent;
+    scrollbar-color: color-mix(in oklab, var(--foreground) 22%, transparent)
+      transparent;
   }
 }
 
@@ -335,7 +366,9 @@
 
   /* Display serif with the softened Fraunces cut */
   .font-display {
-    font-variation-settings: "SOFT" 60, "opsz" 72;
+    font-variation-settings:
+      "SOFT" 60,
+      "opsz" 72;
   }
 
   /* Quiet clinical grid, fades out toward the bottom */
@@ -350,8 +383,16 @@
   /* Soft enamel glow, for hero and empty-state backdrops */
   .surface-glow {
     background-image:
-      radial-gradient(60% 50% at 20% 0%, color-mix(in oklab, var(--mint) 22%, transparent), transparent 70%),
-      radial-gradient(50% 40% at 90% 10%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 70%);
+      radial-gradient(
+        60% 50% at 20% 0%,
+        color-mix(in oklab, var(--mint) 22%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 40% at 90% 10%,
+        color-mix(in oklab, var(--primary) 10%, transparent),
+        transparent 70%
+      );
   }
 
   /* One focus ring for custom controls that do not use shadcn's */

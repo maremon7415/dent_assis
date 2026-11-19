@@ -51,7 +51,7 @@ function RailLink({ item, active }: { item: AdminNavItem; active: boolean }) {
 }
 
 /**
- * The clinic console frame. Desktop: a fixed rail with the five jobs, the way back to the patient
+ * The clinic console frame. Desktop: a sticky rail (in a full-height column) with the five jobs, the way back to the patient
  * portal and the signed-in staff member. Phones: a slim top bar and a five-tab bottom bar.
  */
 export function AdminShell({
@@ -65,44 +65,46 @@ export function AdminShell({
 
   return (
     <ClinicProvider value={{ timezone }}>
-      <div className="min-h-dvh bg-background">
+      <div className="min-h-dvh bg-background lg:flex">
         <SkipLink />
 
-        <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
-          <div className="flex h-(--header-height) flex-col justify-center px-5">
-            <Logo size="md" href="/admin" markVariant="tile" />
-          </div>
-          <div className="px-5 pb-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              Clinic console
-            </p>
-          </div>
-          <nav aria-label="Clinic console" className="flex-1 px-3 py-2">
-            <ul className="space-y-1">
-              {adminNav.map((item) => (
-                <li key={item.href}>
-                  <RailLink
-                    item={item}
-                    active={isAdminActive(pathname, item.href)}
-                  />
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <div className="space-y-3 border-t border-sidebar-border px-3 py-3">
-            <Link
-              href="/dashboard"
-              className="focus-ring flex h-10 items-center justify-between rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
-            >
-              Patient portal
-              <ArrowUpRight className="size-4" aria-hidden />
-            </Link>
-            <div className="flex items-center justify-between px-2">
-              <UserButton appearance={userButtonAppearance} />
-              <ThemeToggle />
+        <div className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:block">
+          <aside className="sticky top-0 z-30 flex h-dvh flex-col">
+            <div className="flex h-(--header-height) flex-col justify-center px-5">
+              <Logo size="md" href="/admin" markVariant="tile" />
             </div>
-          </div>
-        </aside>
+            <div className="px-5 pb-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                Clinic console
+              </p>
+            </div>
+            <nav aria-label="Clinic console" className="flex-1 px-3 py-2">
+              <ul className="space-y-1">
+                {adminNav.map((item) => (
+                  <li key={item.href}>
+                    <RailLink
+                      item={item}
+                      active={isAdminActive(pathname, item.href)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            <div className="space-y-3 border-t border-sidebar-border px-3 py-3">
+              <Link
+                href="/dashboard"
+                className="focus-ring flex h-10 items-center justify-between rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+              >
+                Patient portal
+                <ArrowUpRight className="size-4" aria-hidden />
+              </Link>
+              <div className="flex items-center justify-between px-2">
+                <UserButton appearance={userButtonAppearance} />
+                <ThemeToggle />
+              </div>
+            </div>
+          </aside>
+        </div>
 
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/90 px-4 backdrop-blur-lg lg:hidden">
           <Logo size="sm" href="/admin" markVariant="tile" />
@@ -122,7 +124,7 @@ export function AdminShell({
           </div>
         </header>
 
-        <div className="lg:pl-64">
+        <div className="min-w-0 lg:flex-1">
           <main
             id="main"
             tabIndex={-1}

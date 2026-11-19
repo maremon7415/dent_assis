@@ -91,7 +91,10 @@ export interface AdminAppointmentDTO extends AppointmentDTO {
 
 type AppointmentRow = Appointment & {
   doctor: Pick<Doctor, "id" | "name" | "speciality" | "imageUrl" | "slug">;
-  service?: Pick<Service, "id" | "name" | "slug"> | null;
+  service?:
+    | (Pick<Service, "id" | "name" | "slug"> &
+        Partial<Pick<Service, "durationMinutes">>)
+    | null;
   visitNote?: VisitNote | null;
   review?: Review | null;
 };
@@ -106,7 +109,9 @@ export const appointmentInclude = {
       slug: true,
     },
   },
-  service: { select: { id: true, name: true, slug: true } },
+  service: {
+    select: { id: true, name: true, slug: true, durationMinutes: true },
+  },
   visitNote: true,
   review: true,
 } as const;
@@ -161,9 +166,13 @@ export function toAppointmentDTO(
     time: toLocalTime(interval.startsAt),
     dateLabel: formatClinicDate(interval.startsAt),
     timeLabel: formatClinicTime(interval.startsAt),
-    durationMinutes: Math.round(
-      (interval.endsAt.getTime() - interval.startsAt.getTime()) / 60_000,
-    ),
+    // The treatment's own length (a 45-minute check-up says 45 min). The stored interval is rounded
+    // up to the slot grid so the diary has no gaps; that rounding stays server-side.
+    durationMinutes:
+      a.service?.durationMinutes ??
+      Math.round(
+        (interval.endsAt.getTime() - interval.startsAt.getTime()) / 60_000,
+      ),
     priceCents: a.priceCents,
     reason: a.reason,
     notes: a.notes,

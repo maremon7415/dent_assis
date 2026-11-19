@@ -4,6 +4,7 @@ import { PricingTable, SignUpButton, useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { Component, type ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { siteConfig } from "@/config/site";
 
 /**
  * Clerk's PricingTable is the source of truth for plan names, prices and checkout. When billing is
@@ -11,6 +12,11 @@ import { Button } from "@/components/ui/button";
  * this wrapper then shows a plain next step instead of an empty hole.
  */
 export function PlanTable() {
+  if (!siteConfig.billingEnabled) return <PlanFallback />;
+  return <ClerkPlanTable />;
+}
+
+function ClerkPlanTable() {
   const ref = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<"loading" | "ready" | "empty">("loading");
 
