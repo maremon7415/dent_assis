@@ -14,7 +14,8 @@
     "db:push": "prisma db push && npm run db:constraints",
     "db:constraints": "prisma db execute --file prisma/sql/constraints.sql --schema prisma/schema.prisma",
     "db:seed": "tsx prisma/seed.ts",
-    "db:seed:demo": "tsx prisma/seed.ts --demo"
+    "db:seed:demo": "tsx prisma/seed.ts --demo",
+    "admin:revoke": "tsx prisma/scripts/admin-revoke.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.0",
