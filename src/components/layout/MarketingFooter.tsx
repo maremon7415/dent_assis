@@ -66,7 +66,9 @@ export function MarketingFooter() {
                       href={link.href}
                       // signed-in routes redirect to Clerk for visitors; don't prefetch them
                       prefetch={
-                        ["/appointments", "/dashboard", "/voice"].includes(link.href)
+                        ["/appointments", "/dashboard", "/voice"].includes(
+                          link.href,
+                        )
                           ? false
                           : undefined
                       }
