@@ -1,8 +1,10 @@
 /**
- * User lifecycle driven by Clerk webhooks. Idempotent: replays of the same event are harmless.
+ * User lifecycle driven by Clerk (webhooks and the sign-in sync). Idempotent: replays of the same
+ * event are harmless.
  */
-import type { PrismaClient, User } from "@prisma/client";
+import type { Prisma, PrismaClient, User } from "@prisma/client";
 import { isAdminEmail } from "./auth-shared";
+import { clerkAccountExists } from "./clerk-account";
 import { isPrismaUniqueViolation } from "./errors";
 import { prisma as defaultPrisma } from "./prisma";
 
@@ -34,9 +36,19 @@ export function primaryEmailOf(
   };
 }
 
+type Profile = { firstName: string | null; lastName: string | null };
+
 /**
- * Create or update the local user for a Clerk user.created / user.updated event.
- * Returns the user and whether it was newly created. Soft-deleted users are never revived.
+ * Create or update the local user for a Clerk user.created / user.updated event or a sign-in sync.
+ * Returns the user and whether it was newly created, or null when no row may be created or linked.
+ * Soft-deleted users are never revived.
+ *
+ *  - A row is only created for a *verified* primary email.
+ *  - An existing row takes Clerk's name and, when verified, its new primary email. An email that
+ *    already belongs to another row is not taken; the old one is kept.
+ *  - A new Clerk id whose verified email is already on a row with another Clerk id takes that row over
+ *    only when Clerk confirms the old account is gone (404). The role is then reset to PATIENT and
+ *    re-evaluated against ADMIN_EMAILS, so a re-registered address never inherits admin rights.
  */
 export async function upsertUserFromClerk(
   data: ClerkUserPayload,
@@ -55,34 +67,17 @@ export async function upsertUserFromClerk(
   if (existing?.deletedAt) return { user: existing, created: false };
 
   const promote = primary.verified && isAdminEmail(primary.email);
-  const profile = {
+  const profile: Profile = {
     firstName: data.first_name ?? null,
     lastName: data.last_name ?? null,
   };
 
   if (existing) {
-    try {
-      const user = await db.user.update({
-        where: { id: existing.id },
-        data: {
-          ...profile,
-          email: primary.email,
-          ...(promote ? { role: "ADMIN" as const } : {}),
-        },
-      });
-      return { user, created: false };
-    } catch (error) {
-      if (!isPrismaUniqueViolation(error, "email")) throw error;
-      console.warn(
-        "[users] email change clashes with another account; kept the old email",
-      );
-      const user = await db.user.update({
-        where: { id: existing.id },
-        data: profile,
-      });
-      return { user, created: false };
-    }
+    const user = await refreshUser(db, existing, primary, profile, promote);
+    return { user, created: false };
   }
+
+  if (!primary.verified) return null;
 
   try {
     const user = await db.user.create({
@@ -97,25 +92,90 @@ export async function upsertUserFromClerk(
     return { user, created: true };
   } catch (error) {
     if (isPrismaUniqueViolation(error, "clerkId")) {
-      // raced with the sign-in sync: the row now exists
+      // raced with the sign-in sync or another delivery: the row now exists
       const user = await db.user.findUniqueOrThrow({
         where: { clerkId: data.id },
       });
       return { user, created: false };
     }
-    if (isPrismaUniqueViolation(error, "email") && primary.verified) {
-      const user = await db.user.update({
-        where: { email: primary.email },
-        data: {
-          clerkId: data.id,
-          ...profile,
-          ...(promote ? { role: "ADMIN" as const } : {}),
-        },
-      });
-      return { user, created: false };
+    if (isPrismaUniqueViolation(error, "email")) {
+      const user = await relinkByEmail(
+        db,
+        data.id,
+        primary.email,
+        profile,
+        promote,
+      );
+      return user ? { user, created: false } : null;
     }
     throw error;
   }
+}
+
+async function refreshUser(
+  db: PrismaClient,
+  existing: User,
+  primary: { email: string; verified: boolean },
+  profile: Profile,
+  promote: boolean,
+): Promise<User> {
+  const changes: Prisma.UserUpdateInput = {};
+  if (primary.verified && primary.email !== existing.email)
+    changes.email = primary.email;
+  if (profile.firstName !== existing.firstName)
+    changes.firstName = profile.firstName;
+  if (profile.lastName !== existing.lastName)
+    changes.lastName = profile.lastName;
+  if (promote && existing.role !== "ADMIN") changes.role = "ADMIN";
+  if (Object.keys(changes).length === 0) return existing;
+
+  try {
+    return await db.user.update({ where: { id: existing.id }, data: changes });
+  } catch (error) {
+    if (!changes.email || !isPrismaUniqueViolation(error, "email")) throw error;
+    console.warn(
+      `[users] user ${existing.id}: the new email already belongs to another account; kept the old email`,
+    );
+    const { email: _kept, ...rest } = changes;
+    if (Object.keys(rest).length === 0) return existing;
+    return db.user.update({ where: { id: existing.id }, data: rest });
+  }
+}
+
+/** Hand the row holding `email` to `newClerkId`, only if that row's Clerk account no longer exists. */
+async function relinkByEmail(
+  db: PrismaClient,
+  newClerkId: string,
+  email: string,
+  profile: Profile,
+  promote: boolean,
+): Promise<User | null> {
+  const holder = await db.user.findUnique({ where: { email } });
+  if (!holder || holder.deletedAt) return null;
+  if (holder.clerkId === newClerkId) return holder;
+
+  // Throws when Clerk cannot answer: the caller fails (the webhook is retried) instead of guessing.
+  if (await clerkAccountExists(holder.clerkId)) {
+    console.warn(
+      `[users] refused to re-link user ${holder.id}: its email arrived on a new Clerk account while the old Clerk account still exists`,
+    );
+    return null;
+  }
+
+  // Conditional on the old clerkId so two racing deliveries cannot both move it.
+  const moved = await db.user.updateMany({
+    where: { id: holder.id, clerkId: holder.clerkId },
+    data: {
+      clerkId: newClerkId,
+      ...profile,
+      role: promote ? "ADMIN" : "PATIENT",
+    },
+  });
+  if (moved.count === 0) return null;
+  console.info(
+    `[users] re-linked user ${holder.id} to a new Clerk account (the old one is deleted in Clerk)`,
+  );
+  return db.user.findUnique({ where: { id: holder.id } });
 }
 
 /**
