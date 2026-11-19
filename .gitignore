@@ -48,3 +48,6 @@ next-env.d.ts
 # clerk keyless mode (contains a secret key)
 .clerk/
 !.env.example
+
+# agent worktrees
+.claude/worktrees/
