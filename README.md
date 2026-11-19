@@ -1,62 +1,93 @@
-# Dent-Assist
+# Lumadent
 
-Dent-Assist is an AI-powered Dental Assistant web application designed to streamline appointment booking, notifications, and dental health management.
+**Dental care that answers back.** Lumadent is a dental clinic platform: patients book the right dentist in under a
+minute from the clinic's real diary, manage and review their visits, and ask an AI voice assistant about their teeth
+at any hour. Staff run the day from a clinic console. Every product string, contact detail and booking rule comes from
+one file, so a clinic can ship it under its own name (see [White-labelling](#white-labelling)).
 
 ## Features
 
-- **User Authentication**: Secure signup and login powered by [Clerk](https://clerk.com/).
-- **AI Voice Assistant**: Integrated voice capabilities using [Vapi AI](https://vapi.ai/).
-- **Appointment Management**: Patients can book, view, and cancel appointments.
-- **Automated Email Notifications**: Beautifully designed emails for welcome, appointment confirmations, reminders (24h/1h), and admin notifications, powered by [Resend](https://resend.com/) and [React Email](https://react.email/).
-- **Admin Dashboard**: Comprehensive overview of appointments and platform statistics.
-- **Modern UI**: Built with [Tailwind CSS v4](https://tailwindcss.com/) and [shadcn/ui](https://ui.shadcn.com/) components for a responsive, accessible, and stunning user interface.
-- **Database**: PostgreSQL database hosted on [Neon](https://neon.tech/) and managed with [Prisma ORM](https://www.prisma.io/).
+**Patients**
+- Guided booking in four steps (service, dentist or "any available", day and time from real availability, review),
+  with the whole state in the URL so refresh, back and shared links work. Deep links such as
+  `/appointments?service=checkup-and-clean&doctor=amara-okafor` start part-way through.
+- My visits: upcoming and past visits, reschedule (same dentist and service), cancel with a reason, add to calendar
+  (.ics), read the dentist's visit note, and leave a star review after a completed visit.
+- Dashboard with the next visit, health profile (allergies, medications, emergency contact) and Clerk account settings.
+- AI voice assistant (Vapi) and AI plans through Clerk Billing (optional, see `NEXT_PUBLIC_CLERK_BILLING_ENABLED`).
+- Email: welcome, confirmation, reschedule, cancellation, and 24 h / 1 h reminders (Resend + React Email).
 
-## Tech Stack
+**Clinic console (`/admin`, role `ADMIN`)**
+- Overview: today's schedule, the week ahead, visits that need an outcome, and figures computed from the database.
+- Appointments board: filter by status, dentist, dates and text; confirm, complete with a visit note, mark no-show, cancel.
+- Dentists: profiles, services offered, weekly schedules (several windows a day, up to midnight) and time off.
+- Services (name, duration, price in integer cents) and patients (history and health profile).
 
-- **Framework**: [Next.js](https://nextjs.org/) (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS v4, shadcn/ui (Radix UI)
-- **Database ORM**: Prisma
-- **Authentication**: Clerk
-- **Emails**: Resend + React Email
-- **AI Integration**: Vapi AI
-- **Form validation**: React Hook Form + Zod
-- **Code Quality**: Biome (Linter & Formatter)
+**Platform**
+- No double booking, enforced by the database; per-patient booking caps and change rate limits.
+- Server-side authorization on every action; roles live in the database.
+- Light and dark themes, keyboard and screen-reader friendly (axe-checked), reduced motion respected.
+- Public pages with SEO metadata, sitemap, robots and Open Graph image.
 
-## Getting Started
+## Screenshots
+
+Screenshots of every page at 1440 px and 375 px, light and dark, belong in [`docs/screenshots/`](docs/). Regenerate
+them from a running app with Playwright (the e2e helpers in `e2e/` show how to sign in a test user) and link the ones
+you want to show here.
+
+## Tech stack
+
+Next.js 16 (App Router, React 19, Turbopack) · TypeScript · Tailwind CSS v4 + shadcn/ui (Radix) · Clerk (`@clerk/nextjs` 7)
+· Prisma 6 on PostgreSQL · TanStack Query · React Hook Form + Zod · Resend + React Email · Vapi · Vitest · Playwright +
+axe · Biome.
+
+## Getting started
 
 ### Prerequisites
 
-- Node.js (v18+)
-- PostgreSQL Database
-- API keys for Clerk, Resend, and Vapi AI.
+- Node.js 20+ and npm
+- PostgreSQL 15+ (local or hosted, e.g. Neon)
+- A Clerk application (a development instance is enough locally). Resend and Vapi keys are optional in development.
 
-### Environment Variables
+### 1. Install
 
-Copy `.env.example` to `.env` and fill it in. Every variable is documented there. The backend ones:
+```bash
+npm install
+```
+
+### 2. Database
+
+```bash
+service postgresql start            # or point DATABASE_URL at a hosted database
+createdb dent_assis_dev             # once
+```
+
+### 3. Environment
+
+Copy `.env.example` to `.env` (shared settings) and put secrets in `.env.local` (also gitignored; Next and the e2e
+tests load both, `.env.local` wins). Every variable is documented in `.env.example`; the main ones:
 
 | Variable | Required | Purpose |
 |---|---|---|
 | `DATABASE_URL` | yes | PostgreSQL connection string |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | prod | Clerk keys (dev can run keyless) |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | yes | Clerk keys. Required in development too since `@clerk/nextjs` 7 (its middleware no longer runs keyless); `npx clerk@latest init` writes temporary development keys |
 | `CLERK_WEBHOOK_SECRET` | prod | Verifies `/api/webhooks/clerk` (svix) |
+| `NEXT_PUBLIC_CLERK_BILLING_ENABLED` | no | `true` once Clerk Billing is on and plans are published; otherwise plan tables show a fallback |
 | `ADMIN_EMAILS` | yes | Comma-separated emails promoted to `ADMIN` on sign-in when verified. Legacy `ADMIN_EMAIL` still works |
 | `RESEND_API_KEY` | prod | Email delivery; without it emails are logged and skipped |
 | `EMAIL_FROM`, `NEXT_PUBLIC_SUPPORT_EMAIL` | prod | Sender (verified domain) and reply-to |
-| `NEXT_PUBLIC_APP_URL` | prod | Base URL for links in emails |
+| `NEXT_PUBLIC_APP_URL` | prod | Base URL for links in emails and metadata |
 | `CLINIC_TIMEZONE` | yes | IANA zone all dates/times are interpreted in (default `UTC`) |
-| `NEXT_PUBLIC_CURRENCY` | no | Display currency for `priceCents` (default `USD`) |
+| `NEXT_PUBLIC_CURRENCY`, `NEXT_PUBLIC_CLINIC_PHONE`, `NEXT_PUBLIC_CLINIC_ADDRESS` | no | Display currency and contact details |
 | `CRON_SECRET` | prod | Bearer secret for the reminder job (min 16 chars) |
+| `NEXT_PUBLIC_VAPI_API_KEY`, `NEXT_PUBLIC_VAPI_ASSISTANT_ID` | no | AI voice assistant |
 
-### Installation
+### 4. Schema and seed data
 
 ```bash
-npm install
-service postgresql start          # local Postgres
-npm run db:push                   # prisma db push + CHECK constraints (prisma/sql/constraints.sql)
-npm run db:seed                   # services, 5 dentists, weekly schedules (idempotent)
-npm run db:seed:demo              # optional: demo patients + appointments for screenshots
+npm run db:push                     # prisma db push + CHECK constraints (prisma/sql/constraints.sql)
+npm run db:seed                     # services, 5 dentists, weekly schedules (idempotent)
+npm run db:seed:demo                # optional: demo patients + appointments for screenshots
 ```
 
 `db push` is non-destructive for this schema: every new column is nullable or defaulted. If Prisma warns about
@@ -64,33 +95,76 @@ adding unique indexes (`slotKey`, `slug`) on an existing database, those columns
 nothing to lose; review with `npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script`
 and apply with `npx prisma db execute --file <diff.sql>` if you prefer not to pass `--accept-data-loss`.
 
-### Running the Development Server
-
-Start the development server using Turbopack for faster builds:
+### 5. Run
 
 ```bash
-npm run dev
+npm run dev                         # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
-
-## Project Structure
-
-- `src/app`: Next.js App Router pages and API route handlers.
-- `src/components`: UI components, including shadcn/ui components (`src/components/ui`) and specific sections (landing, dashboard, emails).
-- `src/lib`: Utility functions, Prisma client, and Resend instance.
-- `prisma`: Prisma schema (`schema.prisma`).
+Sign up, then make yourself an admin by adding your email to `ADMIN_EMAILS` (promotion happens on the next sign-in) or
+with `UPDATE users SET role = 'ADMIN' WHERE email = '…';`.
 
 ## Scripts
 
-- `npm run dev` / `build` / `start`: Next.js.
-- `npm run lint` / `format`: Biome.
-- `npm run typecheck`: `tsc --noEmit`.
-- `npm test`: unit tests (Vitest): availability, time zones and DST, authorization guards, reminders, error mapping.
-- `npm run db:push`: sync the schema and apply CHECK constraints. `npm run db:constraints` re-applies just the constraints.
-- `npm run db:seed` / `db:seed:demo`: seed data (see above).
-- `npx tsx prisma/scripts/verify-booking-concurrency.ts`: behaviour check against the local DB; proves concurrent
-  bookings of one slot give exactly one success, overlapping slots can't both be booked, and reschedule/cancel release slots.
+| Script | What it does |
+|---|---|
+| `npm run dev` / `build` / `start` | Next.js (build runs `prisma generate` first) |
+| `npm run lint` / `format` | Biome check / format |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Unit tests (Vitest): availability, time zones and DST, booking rules, authorization guards, reminders, email, DTOs |
+| `npm run test:e2e` | End-to-end and accessibility tests (Playwright + axe) against a production build, see below |
+| `npm run db:push` / `db:constraints` | Sync the schema and CHECK constraints / re-apply just the constraints |
+| `npm run db:seed` / `db:seed:demo` | Seed data |
+| `npm run admin:revoke -- email` | Demote an admin (see [Authorization](#authorization)) |
+| `npx tsx prisma/scripts/verify-booking-concurrency.ts` | Proves against the local DB that concurrent bookings of one slot give exactly one success |
+
+### End-to-end tests
+
+`npm run test:e2e` builds the app, starts it on port 3200 (`next build && next start -p 3200`, or reuses a server
+already on that port outside CI) and runs `e2e/`:
+
+- public pages render with no console errors (home, services, dentists, a dentist profile, pricing, about, FAQ, 404);
+- a signed-out visit to `/dashboard` goes to sign-in, and deep links keep all their query parameters;
+- a patient signs in through the real Clerk UI, books from `/services` "Book this", sees the visit, reschedules and
+  cancels it; a second patient can't see it; a non-admin is sent away from `/admin`;
+- an admin completes a past visit with a visit note; the patient reads it and leaves a review;
+- axe (WCAG 2.2 A/AA) on public, portal and console pages in light and dark; serious or critical violations fail.
+
+It needs Postgres with the seed loaded and **Clerk development keys** (`sk_test_…`) in `.env.local`. Each run creates
+its own users through the Clerk Backend API (`…+clerk_test@example.com`, verification code 424242) and its own rows;
+it never changes data it didn't create, and removes its Clerk users at the end. Playwright's Chromium must be
+installed (`npx playwright install chromium` where it isn't preinstalled).
+
+## Deploying on Netlify
+
+1. Create the site from the repository. Build command `npm run build`, publish directory `.next`; Netlify's Next.js
+   runtime is picked up automatically.
+2. Environment variables (Site configuration → Environment variables): everything marked *prod* or *yes* above, with
+   **production** Clerk keys, `NEXT_PUBLIC_APP_URL` set to the site URL, and `CRON_SECRET` (a random string of 16+
+   characters, e.g. `openssl rand -hex 24`). Mark secrets as secret and scope them to builds and functions.
+3. Database: apply the schema **before** deploying a version that needs it, from your machine or a CI step with the
+   production `DATABASE_URL`: `npm run db:push`, then `npm run db:seed` the first time.
+4. Clerk: add the production domain, create a webhook to `https://<site>/api/webhooks/clerk` for `user.created`,
+   `user.updated` and `user.deleted`, and put its signing secret in `CLERK_WEBHOOK_SECRET`.
+5. Reminders: `netlify/functions/process-appointments.mts` is a Scheduled Function (`@hourly`) that calls
+   `/api/cron/process-appointments` on the site's `URL` with `Authorization: Bearer $CRON_SECRET`. It runs only on
+   published deploys; check its log under Functions after the first hour.
+
+## White-labelling
+
+Edit [`src/config/site.ts`](src/config/site.ts): product name and tagline, description, sender and support email,
+phone and address (or their `NEXT_PUBLIC_…` variables), clinic timezone, currency and locale, and the booking rules
+(slot grid, booking window, minimum notice, per-patient caps). Components read these values, never hard-coded copy.
+Colours and type are tokens in `src/app/globals.css` (light and dark), and the logo is the `<Logo />` component in
+`src/components/brand`; brand guidance is in [`docs/BRAND.md`](docs/BRAND.md).
+
+## Project structure
+
+- `src/app`: App Router pages (public site, `(portal)` patient portal, `admin` console) and API routes (Clerk webhook, cron).
+- `src/components`: UI by area (`marketing`, `appointments`, `portal`, `admin`, `layout`, `brand`, `emails`) and shadcn/ui in `ui`.
+- `src/lib`: auth, booking and availability, time zones, DTOs, email, validation, server actions (`actions/`).
+- `src/hooks`: TanStack Query hooks over the server actions.
+- `prisma`: schema, CHECK constraints, seed and scripts. `e2e`: Playwright tests. `netlify/functions`: scheduled job.
 
 ## Backend
 
