@@ -1,67 +1,82 @@
-import { clsx, type ClassValue } from "clsx";
+import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { addDaysToLocalDate, todayInClinic } from "./time";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function generateAvatar(name: string, gender: "MALE" | "FEMALE") {
-  const username = name.replace(/\s+/g, "").toLowerCase();
-  const base = "https://avatar.iran.liara.run/public";
-  if (gender === "FEMALE") return `${base}/girl?username=${username}`;
-  // default to boy
-  return `${base}/boy?username=${username}`;
+function initialsOf(name: string): string {
+  const words = name
+    .replace(/^dr\.?\s+/i, "")
+    .split(/\s+/)
+    .filter(Boolean);
+  const letters =
+    words.length > 1
+      ? [words[0][0], words[words.length - 1][0]]
+      : [words[0]?.[0] ?? "?"];
+  return letters.join("").toUpperCase();
 }
 
-// phone formatting function for US numbers - ai generated 🎉
+const AVATAR_PALETTE = [
+  ["#0E7C7B", "#E6F5F1"],
+  ["#0B2A33", "#D9EEEA"],
+  ["#2F6F63", "#EAF4EF"],
+  ["#1F5C7A", "#E4EFF5"],
+  ["#6A4C93", "#EFE9F6"],
+] as const;
+
+/**
+ * Generated initials avatar as a self-contained SVG data URI: no third-party hotlink and no photo of a
+ * real person. `gender` is accepted for backwards compatibility and does not change the output.
+ */
+export function generateAvatar(
+  name: string,
+  _gender?: "MALE" | "FEMALE",
+): string {
+  const initials = initialsOf(name).replace(/[^A-Z0-9]/g, "") || "?";
+  let hash = 0;
+  for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  const [fg, bg] = AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="${initials}"><rect width="128" height="128" rx="64" fill="${bg}"/><text x="50%" y="50%" dy=".35em" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="48" font-weight="600" fill="${fg}">${initials}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+/** US-style phone formatting for inputs. */
 export const formatPhoneNumber = (value: string) => {
   if (!value) return value;
-
-  const phoneNumber = value.replace(/[^\d]/g, "");
-  const phoneNumberLength = phoneNumber.length;
-
-  if (phoneNumberLength < 4) return phoneNumber;
-  if (phoneNumberLength < 7) {
-    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-  }
-  return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(
-    3,
-    6
-  )}-${phoneNumber.slice(6, 10)}`;
+  const digits = value.replace(/[^\d]/g, "");
+  if (digits.length < 4) return digits;
+  if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
 };
 
-//  ai generated 🎉
+/** @deprecated use getAvailableDays(). Next 5 clinic-local dates starting tomorrow ("YYYY-MM-DD"). */
 export const getNext5Days = () => {
-  const dates = [];
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  for (let i = 0; i < 5; i++) {
-    const date = new Date(tomorrow);
-    date.setDate(date.getDate() + i);
-    dates.push(date.toISOString().split("T")[0]);
-  }
-
-  return dates;
+  const today = todayInClinic();
+  return Array.from({ length: 5 }, (_, i) => addDaysToLocalDate(today, i + 1));
 };
 
-export const getAvailableTimeSlots = () => {
-  return [
-    "09:00",
-    "09:30",
-    "10:00",
-    "10:30",
-    "11:00",
-    "11:30",
-    "14:00",
-    "14:30",
-    "15:00",
-    "15:30",
-    "16:00",
-    "16:30",
-  ];
-};
+/** @deprecated real times come from getAvailableSlots(); this fixed grid ignores schedules. */
+export const getAvailableTimeSlots = () => [
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+];
 
+/**
+ * @deprecated example data only, NOT real prices. Use getServices() (database). Kept until the booking
+ * page is rewritten so it still compiles.
+ */
 export const APPOINTMENT_TYPES = [
   { id: "checkup", name: "Regular Checkup", duration: "60 min", price: "$120" },
   { id: "cleaning", name: "Teeth Cleaning", duration: "45 min", price: "$90" },

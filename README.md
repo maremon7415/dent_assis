@@ -34,43 +34,35 @@ Dent-Assist is an AI-powered Dental Assistant web application designed to stream
 
 ### Environment Variables
 
-Create a `.env` file in the root directory and add the following variables:
+Copy `.env.example` to `.env` and fill it in. Every variable is documented there. The backend ones:
 
-```env
-# Clerk Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-CLERK_SECRET_KEY=your_clerk_secret_key
-CLERK_WEBHOOK_SECRET=your_clerk_webhook_secret
-
-# Database
-DATABASE_URL=your_postgresql_database_url
-
-# Vapi AI
-NEXT_PUBLIC_VAPI_API_KEY=your_vapi_api_key
-NEXT_PUBLIC_VAPI_ASSISTANT_ID=your_vapi_assistant_id
-
-# Resend Emails
-RESEND_API_KEY=your_resend_api_key
-ADMIN_EMAIL=your_admin_email_address
-
-# App URL for absolute links
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
+| Variable | Required | Purpose |
+|---|---|---|
+| `DATABASE_URL` | yes | PostgreSQL connection string |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | prod | Clerk keys (dev can run keyless) |
+| `CLERK_WEBHOOK_SECRET` | prod | Verifies `/api/webhooks/clerk` (svix) |
+| `ADMIN_EMAILS` | yes | Comma-separated emails promoted to `ADMIN` on sign-in when verified. Legacy `ADMIN_EMAIL` still works |
+| `RESEND_API_KEY` | prod | Email delivery; without it emails are logged and skipped |
+| `EMAIL_FROM`, `NEXT_PUBLIC_SUPPORT_EMAIL` | prod | Sender (verified domain) and reply-to |
+| `NEXT_PUBLIC_APP_URL` | prod | Base URL for links in emails |
+| `CLINIC_TIMEZONE` | yes | IANA zone all dates/times are interpreted in (default `UTC`) |
+| `NEXT_PUBLIC_CURRENCY` | no | Display currency for `priceCents` (default `USD`) |
+| `CRON_SECRET` | prod | Bearer secret for the reminder job (min 16 chars) |
 
 ### Installation
 
-1. Clone the repository and install dependencies:
-   ```bash
-   npm install
-   ```
-2. Push the Prisma schema to your database:
-   ```bash
-   npx prisma db push
-   ```
-3. Generate the Prisma Client:
-   ```bash
-   npx prisma generate
-   ```
+```bash
+npm install
+service postgresql start          # local Postgres
+npm run db:push                   # prisma db push + CHECK constraints (prisma/sql/constraints.sql)
+npm run db:seed                   # services, 5 dentists, weekly schedules (idempotent)
+npm run db:seed:demo              # optional: demo patients + appointments for screenshots
+```
+
+`db push` is non-destructive for this schema: every new column is nullable or defaulted. If Prisma warns about
+adding unique indexes (`slotKey`, `slug`) on an existing database, those columns are new and empty, so there is
+nothing to lose; review with `npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script`
+and apply with `npx prisma db execute --file <diff.sql>` if you prefer not to pass `--accept-data-loss`.
 
 ### Running the Development Server
 
@@ -91,8 +83,53 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to view the 
 
 ## Scripts
 
-- `npm run dev`: Starts the development server with Turbopack.
-- `npm run build`: Generates the Prisma client and builds the application for production.
-- `npm run start`: Starts the production server.
-- `npm run lint`: Runs Biome to check for linting errors.
-- `npm run format`: Runs Biome to format the codebase.
+- `npm run dev` / `build` / `start`: Next.js.
+- `npm run lint` / `format`: Biome.
+- `npm run typecheck`: `tsc --noEmit`.
+- `npm test`: unit tests (Vitest): availability, time zones and DST, authorization guards, reminders, error mapping.
+- `npm run db:push`: sync the schema and apply CHECK constraints. `npm run db:constraints` re-applies just the constraints.
+- `npm run db:seed` / `db:seed:demo`: seed data (see above).
+- `npx tsx prisma/scripts/verify-booking-concurrency.ts`: behaviour check against the local DB; proves concurrent
+  bookings of one slot give exactly one success, overlapping slots can't both be booked, and reschedule/cancel release slots.
+
+## Backend
+
+### Authorization
+- Identity: Clerk. `src/lib/auth.ts` exposes `getCurrentUser()`, `requireUser()`, `requireAdmin()`. The local `User`
+  row is created on first sign-in (and by the Clerk webhook), whichever comes first.
+- Roles live in the database (`User.role`: `PATIENT` | `ADMIN`). `ADMIN_EMAILS` only bootstraps: a listed, verified email
+  is promoted on sync. Promotion is one-way; demote by updating the row.
+- Every server action checks the caller itself. Patient actions only read/change the caller's rows; admin actions
+  (`admin*` in `src/lib/actions/admin.ts`) require `ADMIN`. `src/proxy.ts` only redirects signed-out visitors.
+- Server actions return `ActionResult<T>` (`{ ok: true, data } | { ok: false, code, error, fieldErrors? }`) instead of
+  throwing (Next hides thrown messages in production). Hooks in `src/hooks` call `unwrap()` and throw `ActionFailedError`
+  with the `code` (e.g. `SLOT_TAKEN`, `TOO_LATE`).
+
+### Booking rules
+- Times: `Appointment.startsAt`/`endsAt` are UTC instants computed from the clinic timezone. `date` + `time` are kept
+  for legacy readers. Availability = doctor's weekly schedule - time off - blocking appointments (overlap-aware),
+  on a `slotMinutes` grid, honouring `minNoticeHours` and `bookingWindowDays` from `src/config/site.ts`.
+- No double booking, enforced by the database: `slotKey` (`doctorId|startsAt`) is UNIQUE while an appointment holds its
+  slot and cleared on cancel/no-show; booking runs in a transaction under a per-doctor advisory lock so overlapping
+  slots of different lengths can't race either.
+- Prices are snapshotted to `Appointment.priceCents` (integer cents) at booking time.
+- Dentists are never deleted (appointments reference them with `ON DELETE RESTRICT`); deactivate instead.
+- Deleting a Clerk account soft-deletes the user: personal and health data are erased, future appointments cancelled,
+  history (appointments, visit notes, ratings) kept.
+
+### Email
+`src/lib/email.ts` renders the React Email templates in `src/components/emails` and sends through Resend from server code
+only: welcome, booking confirmation, reschedule, cancellation, admin new-booking notice (to `ADMIN_EMAILS`), 24h and 1h
+reminders. There is no public send-email endpoint. Sends run after the response and never fail a booking.
+
+### Reminder job
+`GET|POST /api/cron/process-appointments` with `Authorization: Bearer $CRON_SECRET` (401 without it; 503 if the secret
+is not configured). Idempotent: each reminder is claimed before sending and released if the send fails.
+- **Netlify** (deployed): `netlify/functions/process-appointments.mts` is a Scheduled Function (`@hourly`) that calls
+  the route on `$URL` with the secret. Set `CRON_SECRET` in the site's environment variables.
+- **Any other scheduler**: call the route hourly, e.g.
+  `curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://your-site/api/cron/process-appointments`.
+
+Past appointments are not auto-expired: a `CONFIRMED` appointment whose end has passed stays `CONFIRMED` until staff
+record `COMPLETED` (with a visit note) or `NO_SHOW`. The job reports how many need an outcome, and admins list them with
+`adminGetAppointments({ needsOutcome: true })`.
