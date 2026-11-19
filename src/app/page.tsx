@@ -1,30 +1,59 @@
-import CTA from "@/components/landing/CTA";
-import Footer from "@/components/landing/Footer";
-import Header from "@/components/landing/Header";
-import Hero from "@/components/landing/Hero";
-import HowItWorks from "@/components/landing/HowItWorks";
-import Pricing from "@/components/landing/Pricing";
-import WhatToAsk from "@/components/landing/WhatToAsk";
-import { syncUser } from "@/lib/actions/user";
-import { currentUser } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import {
+  loadDoctors,
+  loadNextOpening,
+  loadServices,
+} from "@/components/marketing/data";
+import { AssistantBand } from "@/components/marketing/home/AssistantBand";
+import {
+  FaqTeaser,
+  FinalCta,
+  PricingTeaser,
+} from "@/components/marketing/home/Closing";
+import { DentistsTeaser } from "@/components/marketing/home/DentistsTeaser";
+import { Hero } from "@/components/marketing/home/Hero";
+import { HowItWorks } from "@/components/marketing/home/HowItWorks";
+import { ServicesTeaser } from "@/components/marketing/home/ServicesTeaser";
+import { JsonLd, MarketingPage } from "@/components/marketing/primitives";
+import { clinicJsonLd } from "@/components/marketing/seo";
+import { siteConfig } from "@/config/site";
+
+/** The hero shows real open times, so keep the page fresh without rendering it per request. */
+export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: { absolute: `${siteConfig.name}: ${siteConfig.tagline}` },
+  description: siteConfig.description,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: `${siteConfig.name}: ${siteConfig.tagline}`,
+    description: siteConfig.description,
+    url: "/",
+  },
+};
 
 export default async function Home() {
-  const user = await currentUser();
-
-  await syncUser();
-  // Redirect to dashboard if user is logged in
-  if (user) redirect("/dashboard");
+  const [services, doctors, opening] = await Promise.all([
+    loadServices(),
+    loadDoctors(),
+    loadNextOpening(),
+  ]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <Hero />
+    <MarketingPage>
+      <JsonLd data={clinicJsonLd({ services, doctors })} />
+      <Hero
+        opening={opening}
+        dentistCount={doctors?.length ?? 0}
+        serviceCount={services?.length ?? 0}
+      />
       <HowItWorks />
-      <WhatToAsk />
-      <Pricing />
-      <CTA />
-      <Footer />
-    </div>
+      <ServicesTeaser services={services} />
+      <DentistsTeaser doctors={doctors} />
+      <AssistantBand />
+      <PricingTeaser />
+      <FaqTeaser />
+      <FinalCta />
+    </MarketingPage>
   );
 }
