@@ -41,3 +41,18 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# clerk configuration (can include secrets)
+/.clerk/
+
+# clerk keyless mode (contains a secret key)
+.clerk/
+!.env.example
+
+# agent worktrees
+.claude/worktrees/
+
+# playwright
+/e2e/.auth/
+/e2e/.results/
+/playwright-report/

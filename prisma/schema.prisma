@@ -1,3 +1,10 @@
+// Lumadent data model.
+// This project uses `prisma db push` against existing databases, so every new column is nullable
+// or defaulted and no existing column is renamed or dropped.
+// Times: `startsAt`/`endsAt` are UTC instants computed from the clinic timezone (CLINIC_TIMEZONE).
+// `date` + `time` are kept for legacy readers: `date` is the clinic-local calendar day stored as
+// UTC midnight, `time` is the clinic-local "HH:mm".
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,67 +14,201 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id        String @id @default(cuid())
-  clerkId   String @unique
-  email     String @unique
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
   firstName String?
   lastName  String?
   phone     String?
-  createdAt DateTime @default(now()) // member since sep 2025
+  role      Role     @default(PATIENT)
+
+  // Personal / health profile (sensitive: only the patient and admins read it)
+  dateOfBirth           DateTime? @db.Date
+  allergies             String?
+  medications           String?
+  medicalNotes          String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  marketingOptIn        Boolean   @default(false)
+
+  /// Set once the welcome email has been claimed, so the webhook and the first sign-in never both send it.
+  welcomeEmailSentAt DateTime?
+  /// Soft delete: set when the Clerk account is deleted. PII is anonymised; appointment history is kept.
+  deletedAt          DateTime?
+
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // relationships
   appointments Appointment[]
+  reviews      Review[]
 
+  @@index([role])
+  @@index([deletedAt])
   @@map("users")
 }
 
-model Doctor {
-  id          String   @id @default(cuid())
-  name        String
-  email       String   @unique
-  phone       String
-  speciality  String
-  bio         String?
-  imageUrl    String
-  gender      Gender
-  isActive    Boolean @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Service {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  description     String
+  durationMinutes Int
+  priceCents      Int
+  category        String
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  // relationships
+  doctors      Doctor[]      @relation("DoctorServices")
   appointments Appointment[]
 
-  @@map("doctors")
+  @@index([isActive, sortOrder])
+  @@map("services")
+}
 
+model Doctor {
+  id              String   @id @default(cuid())
+  slug            String?  @unique
+  name            String
+  email           String   @unique
+  phone           String
+  speciality      String
+  bio             String?
+  imageUrl        String
+  gender          Gender
+  yearsExperience Int?
+  languages       String[] @default([])
+  education       String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  appointments Appointment[]
+  schedules    DoctorSchedule[]
+  timeOff      DoctorTimeOff[]
+  services     Service[]        @relation("DoctorServices")
+  reviews      Review[]
+
+  @@index([isActive])
+  @@map("doctors")
+}
+
+/// One working window per row; a doctor can have several windows on the same weekday (e.g. a lunch gap).
+model DoctorSchedule {
+  id        String @id @default(cuid())
+  doctorId  String
+  /// 0 = Sunday ... 6 = Saturday, in the clinic timezone.
+  weekday   Int
+  /// Clinic-local "HH:mm".
+  startTime String
+  endTime   String
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, weekday])
+  @@map("doctor_schedules")
+}
+
+model DoctorTimeOff {
+  id        String   @id @default(cuid())
+  doctorId  String
+  startsAt  DateTime
+  endsAt    DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, startsAt, endsAt])
+  @@map("doctor_time_off")
 }
 
 model Appointment {
-  id          String            @id @default(cuid())
-  date        DateTime
-  time        String // store time as string i.e. 14:30
-  duration    Int               @default(30) // duration in minutes
-  status      AppointmentStatus @default(CONFIRMED)
-  notes       String?
-  reason      String? // reason for appointment - teeth cleaning? emergency visit? etc.
-  reminderSent24h Boolean        @default(false)
-  reminderSent1Hour Boolean      @default(false)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id                String            @id @default(cuid())
+  /// Legacy: clinic-local calendar day as UTC midnight. Prefer startsAt.
+  date              DateTime
+  /// Legacy: clinic-local "HH:mm". Prefer startsAt.
+  time              String
+  duration          Int               @default(30)
+  startsAt          DateTime?
+  endsAt            DateTime?
+  status            AppointmentStatus @default(CONFIRMED)
+  notes             String?
+  reason            String?
+  /// Price snapshot at booking time, integer minor units.
+  priceCents        Int?
+  /// `${doctorId}|${startsAt ISO}` while the appointment holds its slot; NULL once cancelled or no-show.
+  /// The unique index makes a double booking of the same start impossible at the database level.
+  slotKey           String?           @unique
+  reminderSent24h   Boolean           @default(false)
+  reminderSent1Hour Boolean           @default(false)
+  cancelledAt       DateTime?
+  cancelReason      String?
+  cancelledBy       CancelledBy?
+  rescheduledFromId String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
-  // foreign keys
-  userId String
-  doctorId String
+  userId    String
+  doctorId  String
+  serviceId String?
 
-  // relationships
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  user              User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  doctor            Doctor       @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  service           Service?     @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  rescheduledFrom   Appointment? @relation("Reschedule", fields: [rescheduledFromId], references: [id], onDelete: SetNull)
+  rescheduledTo     Appointment[] @relation("Reschedule")
+  visitNote         VisitNote?
+  review            Review?
 
+  @@index([userId, startsAt])
+  @@index([doctorId, startsAt])
+  @@index([status, startsAt])
+  @@index([serviceId])
+  @@index([rescheduledFromId])
   @@map("appointments")
 }
 
+model VisitNote {
+  id             String   @id @default(cuid())
+  appointmentId  String   @unique
+  summary        String
+  treatment      String?
+  followUpInDays Int?
+  /// User id of the admin who wrote it.
+  createdBy      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@map("visit_notes")
+}
+
+model Review {
+  id            String   @id @default(cuid())
+  appointmentId String   @unique
+  userId        String
+  doctorId      String
+  rating        Int
+  comment       String?
+  createdAt     DateTime @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  doctor      Doctor      @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+
+  @@index([doctorId])
+  @@index([userId])
+  @@map("reviews")
+}
+
+enum Role {
+  PATIENT
+  ADMIN
+}
 
 enum Gender {
   MALE
@@ -75,8 +216,16 @@ enum Gender {
 }
 
 enum AppointmentStatus {
+  PENDING
   CONFIRMED
   COMPLETED
   CANCELLED
+  NO_SHOW
   EXPIRED
+}
+
+enum CancelledBy {
+  PATIENT
+  ADMIN
+  SYSTEM
 }

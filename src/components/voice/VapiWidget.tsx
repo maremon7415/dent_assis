@@ -1,293 +1,248 @@
 "use client";
 
-import { vapi } from "@/lib/vapi";
-import { useUser } from "@clerk/nextjs";
+import { Loader2, Mic, PhoneOff, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Card } from "../ui/card";
-import Image from "next/image";
-import { Button } from "../ui/button";
+import { LogoMark } from "@/components/brand/LogoMark";
+import { Button } from "@/components/ui/button";
+import { siteConfig } from "@/config/site";
+import { cn } from "@/lib/utils";
+import { getVapi, vapiAssistantId } from "@/lib/vapi";
 
-function VapiWidget() {
-  const [callActive, setCallActive] = useState(false);
-  const [connecting, setConnecting] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [callEnded, setCallEnded] = useState(false);
+type CallState = "idle" | "connecting" | "active" | "ended" | "error";
+type Line = { id: number; role: "assistant" | "user"; text: string };
 
-  const { user, isLoaded } = useUser();
-  const messageContainerRef = useRef<HTMLDivElement>(null);
+type VapiMessage = {
+  type?: string;
+  transcriptType?: string;
+  transcript?: string;
+  role?: string;
+};
 
-  // auto-scroll for messages
+const STATUS: Record<CallState, string> = {
+  idle: "Ready when you are",
+  connecting: "Connecting…",
+  active: "Listening",
+  ended: "Call ended",
+  error: "Couldn't connect",
+};
+
+/**
+ * Voice call with the clinic's AI assistant (Vapi). Only rendered when the Vapi keys are set; the page
+ * shows a "not configured" state otherwise.
+ */
+export default function VapiWidget({
+  firstName,
+}: {
+  firstName?: string | null;
+}) {
+  const [state, setState] = useState<CallState>("idle");
+  const [speaking, setSpeaking] = useState(false);
+  const [lines, setLines] = useState<Line[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const logRef = useRef<HTMLOListElement>(null);
+  const nextId = useRef(0);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to the newest line whenever one arrives
   useEffect(() => {
-    if (messageContainerRef.current) {
-      messageContainerRef.current.scrollTop =
-        messageContainerRef.current.scrollHeight;
-    }
-  }, [messages]);
+    const el = logRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [lines]);
 
-  // setup event listeners for VAPI
   useEffect(() => {
-    const handleCallStart = () => {
-      console.log("Call started");
-      setConnecting(false);
-      setCallActive(true);
-      setCallEnded(false);
+    const vapi = getVapi();
+    const onStart = () => {
+      setState("active");
+      setError(null);
     };
-
-    const handleCallEnd = () => {
-      console.log("Call ended");
-      setCallActive(false);
-      setConnecting(false);
-      setIsSpeaking(false);
-      setCallEnded(true);
+    const onEnd = () => {
+      setState((s) => (s === "error" ? s : "ended"));
+      setSpeaking(false);
     };
-
-    const handleSpeechStart = () => {
-      console.log("AI started Speaking");
-      setIsSpeaking(true);
-    };
-
-    const handleSpeechEnd = () => {
-      console.log("AI stopped Speaking");
-      setIsSpeaking(false);
-    };
-
-    const handleMessage = (message: any) => {
-      if (message.type === "transcript" && message.transcriptType === "final") {
-        const newMessage = { content: message.transcript, role: message.role };
-        setMessages((prev) => [...prev, newMessage]);
+    const onSpeechStart = () => setSpeaking(true);
+    const onSpeechEnd = () => setSpeaking(false);
+    const onMessage = (m: VapiMessage) => {
+      if (
+        m.type === "transcript" &&
+        m.transcriptType === "final" &&
+        m.transcript
+      ) {
+        const role = m.role === "assistant" ? "assistant" : "user";
+        const text = m.transcript;
+        setLines((prev) => [...prev, { id: nextId.current++, role, text }]);
       }
     };
-
-    const handleError = (error: any) => {
-      console.log("Vapi Error", error);
-      setConnecting(false);
-      setCallActive(false);
+    const onError = (e: unknown) => {
+      console.error("[vapi]", e);
+      setState("error");
+      setSpeaking(false);
+      setError(
+        "The call dropped or couldn't start. Check that your microphone is allowed for this site, then try again.",
+      );
     };
 
     vapi
-      .on("call-start", handleCallStart)
-      .on("call-end", handleCallEnd)
-      .on("speech-start", handleSpeechStart)
-      .on("speech-end", handleSpeechEnd)
-      .on("message", handleMessage)
-      .on("error", handleError);
-
-    // cleanup event listeners on unmount
+      .on("call-start", onStart)
+      .on("call-end", onEnd)
+      .on("speech-start", onSpeechStart)
+      .on("speech-end", onSpeechEnd)
+      .on("message", onMessage)
+      .on("error", onError);
     return () => {
       vapi
-        .off("call-start", handleCallStart)
-        .off("call-end", handleCallEnd)
-        .off("speech-start", handleSpeechStart)
-        .off("speech-end", handleSpeechEnd)
-        .off("message", handleMessage)
-        .off("error", handleError);
+        .off("call-start", onStart)
+        .off("call-end", onEnd)
+        .off("speech-start", onSpeechStart)
+        .off("speech-end", onSpeechEnd)
+        .off("message", onMessage)
+        .off("error", onError);
+      vapi.stop();
     };
   }, []);
 
-  const toggleCall = async () => {
-    if (callActive) vapi.stop();
-    else {
-      try {
-        setConnecting(true);
-        setMessages([]);
-        setCallEnded(false);
-
-        await vapi.start(process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID);
-      } catch (error) {
-        console.log("Failed to start call", error);
-        setConnecting(false);
-      }
+  const start = async () => {
+    setLines([]);
+    setError(null);
+    setState("connecting");
+    try {
+      await getVapi().start(vapiAssistantId);
+    } catch (e) {
+      console.error("[vapi] start failed", e);
+      setState("error");
+      setError(
+        "We couldn't start the call. Allow microphone access for this site and try again.",
+      );
     }
   };
 
-  if (!isLoaded) return null;
+  const stop = () => getVapi().stop();
+  const live = state === "active" || state === "connecting";
 
   return (
-    <div className="max-w-5xl mx-auto px-4 flex flex-col overflow-hidden pb-20">
-      {/* TITLE */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold font-mono">
-          <span>Talk to Your </span>
-          <span className="text-primary uppercase">AI Dental Assistant</span>
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Have a voice conversation with our AI assistant for dental advice and
-          guidance
+    <section
+      aria-labelledby="assistant-call-title"
+      className="overflow-hidden rounded-2xl border bg-card shadow-xs"
+    >
+      <h2 id="assistant-call-title" className="sr-only">
+        Voice call
+      </h2>
+      <div className="surface-glow flex flex-col items-center px-6 pt-10 pb-8 text-center">
+        <div className="relative flex size-36 items-center justify-center">
+          <span
+            aria-hidden
+            className={cn(
+              "absolute inset-0 rounded-full bg-mint/30 blur-xl transition-[opacity,transform] duration-500 ease-out",
+              state === "active"
+                ? "scale-100 opacity-100"
+                : "scale-75 opacity-0",
+              speaking && "scale-110",
+            )}
+          />
+          <span
+            aria-hidden
+            className={cn(
+              "absolute inset-3 rounded-full border-2 transition-colors duration-300",
+              state === "active" ? "border-primary/50" : "border-border",
+            )}
+          />
+          <span className="relative flex size-24 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+            <LogoMark className="size-12" />
+          </span>
+        </div>
+
+        <div className="mt-4 flex h-6 items-end gap-1" aria-hidden>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <span
+              key={i}
+              className={cn(
+                "w-1 rounded-full bg-primary transition-opacity duration-200",
+                speaking ? "animate-sound-wave opacity-100" : "h-1 opacity-30",
+              )}
+              style={speaking ? { animationDelay: `${i * 0.12}s` } : undefined}
+            />
+          ))}
+        </div>
+
+        <p
+          className="mt-3 font-display text-2xl text-foreground"
+          aria-live="polite"
+        >
+          {state === "active" && speaking ? "Speaking" : STATUS[state]}
+        </p>
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+          {state === "idle"
+            ? `${firstName ? `${firstName}, ask` : "Ask"} anything about your teeth, a treatment or your visit. Speak naturally; you can interrupt.`
+            : state === "ended"
+              ? "Your transcript is below. It isn't saved once you leave this page."
+              : state === "error"
+                ? error
+                : "Speak when you're ready. End the call any time."}
+        </p>
+
+        <div className="mt-6">
+          {live ? (
+            <Button
+              size="lg"
+              variant="destructive"
+              onClick={stop}
+              className="h-12 rounded-full px-7 active:scale-[0.97]"
+            >
+              {state === "connecting" ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <PhoneOff className="size-4" aria-hidden />
+              )}
+              {state === "connecting" ? "Cancel" : "End call"}
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              onClick={start}
+              className="h-12 rounded-full px-7 active:scale-[0.97]"
+            >
+              {state === "idle" ? (
+                <Mic className="size-4" aria-hidden />
+              ) : (
+                <RotateCcw className="size-4" aria-hidden />
+              )}
+              {state === "idle" ? "Start a voice call" : "Start a new call"}
+            </Button>
+          )}
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Uses your microphone. Calls go to {siteConfig.name}'s assistant, not a
+          person.
         </p>
       </div>
 
-      {/* VIDEO CALL AREA */}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* AI ASSISTANT CARD */}
-
-        <Card className="bg-card/90 backdrop-blur-sm border border-border overflow-hidden relative">
-          <div className="aspect-video flex flex-col items-center justify-center p-6 relative">
-            {/* AI VOICE ANIMATION */}
-            <div
-              className={`absolute inset-0 ${isSpeaking ? "opacity-30" : "opacity-0"
-                } transition-opacity duration-300`}
-            >
-              {/* voice wave animation when speaking */}
-              <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 flex justify-center items-center h-20">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`mx-1 h-16 w-1 bg-primary rounded-full ${isSpeaking ? "animate-sound-wave" : ""
-                      }`}
-                    style={{
-                      animationDelay: `${i * 0.1}s`,
-                      height: isSpeaking ? `${Math.random() * 50 + 20}%` : "5%",
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* AI LOGO */}
-            <div className="relative size-32 mb-4">
-              <div
-                className={`absolute inset-0 bg-primary opacity-10 rounded-full blur-lg ${isSpeaking ? "animate-pulse" : ""
-                  }`}
-              />
-
-              <div className="relative w-full h-full rounded-full bg-card flex items-center justify-center border border-border overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-primary/5"></div>
-                <Image
-                  src="/logo.png"
-                  alt="AI Dental Assistant"
-                  width={80}
-                  height={80}
-                  className="w-20 h-20 object-contain"
-                />
-              </div>
-            </div>
-
-            <h2 className="text-xl font-bold text-foreground">Dent-Assist AI</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Dental Assistant
-            </p>
-
-            {/* SPEAKING INDICATOR */}
-            <div
-              className={`mt-4 flex items-center gap-2 px-3 py-1 rounded-full bg-card border border-border ${isSpeaking ? "border-primary" : ""
-                }`}
-            >
-              <div
-                className={`w-2 h-2 rounded-full ${isSpeaking ? "bg-primary animate-pulse" : "bg-muted"
-                  }`}
-              />
-
-              <span className="text-xs text-muted-foreground">
-                {isSpeaking
-                  ? "Speaking..."
-                  : callActive
-                    ? "Listening..."
-                    : callEnded
-                      ? "Call ended"
-                      : "Waiting..."}
-              </span>
-            </div>
-          </div>
-        </Card>
-
-        {/* USER CARD */}
-        <Card
-          className={`bg-card/90 backdrop-blur-sm border overflow-hidden relative`}
-        >
-          <div className="aspect-video flex flex-col items-center justify-center p-6 relative">
-            {/* User Image */}
-            <div className="relative size-32 mb-4">
-              <Image
-                src={user?.imageUrl!}
-                alt="User"
-                width={128}
-                height={128}
-                className="size-full object-cover rounded-full"
-              />
-            </div>
-
-            <h2 className="text-xl font-bold text-foreground">You</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {user
-                ? (user.firstName + " " + (user.lastName || "")).trim()
-                : "Guest"}
-            </p>
-
-            {/* User Ready Text */}
-            <div
-              className={`mt-4 flex items-center gap-2 px-3 py-1 rounded-full bg-card border`}
-            >
-              <div className={`w-2 h-2 rounded-full bg-muted`} />
-              <span className="text-xs text-muted-foreground">Ready</span>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* MESSAGE CONTAINER */}
-      {messages.length > 0 && (
-        <div
-          ref={messageContainerRef}
-          className="w-full bg-card/90 backdrop-blur-sm border border-border rounded-xl p-4 mb-8 h-64 overflow-y-auto transition-all duration-300 scroll-smooth"
-        >
-          <div className="space-y-3">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className="message-item animate-in fade-in duration-300"
+      {lines.length > 0 ? (
+        <div className="border-t">
+          <h3 className="px-6 pt-4 text-sm font-semibold text-muted-foreground">
+            Transcript
+          </h3>
+          <ol
+            ref={logRef}
+            aria-live="polite"
+            className="max-h-72 space-y-3 overflow-y-auto px-6 pt-3 pb-5"
+          >
+            {lines.map((l) => (
+              <li
+                key={l.id}
+                className={cn(
+                  "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+                  l.role === "assistant"
+                    ? "rounded-bl-md bg-muted text-foreground"
+                    : "ml-auto rounded-br-md bg-primary text-primary-foreground",
+                )}
               >
-                <div className="font-semibold text-xs text-muted-foreground mb-1">
-                  {msg.role === "assistant" ? "Dent-Assist AI" : "You"}:
-                </div>
-                <p className="text-foreground">{msg.content}</p>
-              </div>
+                <span className="sr-only">
+                  {l.role === "assistant" ? "Assistant: " : "You: "}
+                </span>
+                {l.text}
+              </li>
             ))}
-
-            {callEnded && (
-              <div className="message-item animate-in fade-in duration-300">
-                <div className="font-semibold text-xs text-primary mb-1">
-                  System:
-                </div>
-                <p className="text-foreground">
-                  Call ended. Thank you for using Dent-Assist AI!
-                </p>
-              </div>
-            )}
-          </div>
+          </ol>
         </div>
-      )}
-
-      {/* CALL CONTROLS */}
-      <div className="w-full flex justify-center gap-4">
-        <Button
-          className={`w-44 text-xl rounded-3xl ${callActive
-              ? "bg-destructive hover:bg-destructive/90"
-              : callEnded
-                ? "bg-red-500 hover:bg-red-700"
-                : "bg-primary hover:bg-primary/90"
-            } text-white relative`}
-          onClick={toggleCall}
-          disabled={connecting || callEnded}
-        >
-          {connecting && (
-            <span className="absolute inset-0 rounded-full animate-ping bg-primary/50 opacity-75"></span>
-          )}
-
-          <span>
-            {callActive
-              ? "End Call"
-              : connecting
-                ? "Connecting..."
-                : callEnded
-                  ? "Call Ended"
-                  : "Start Call"}
-          </span>
-        </Button>
-      </div>
-    </div>
+      ) : null}
+    </section>
   );
 }
-
-export default VapiWidget;

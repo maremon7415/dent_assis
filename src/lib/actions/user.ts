@@ -1,30 +1,21 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
-import { prisma } from "../prisma";
+import { getCurrentUser } from "@/lib/auth";
+import { describeForLog } from "@/lib/errors";
 
-export async function syncUser() {
+/**
+ * Called by <UserSync /> after sign-in: makes sure the local user row exists (and admin promotion and
+ * the welcome email happen). Returns only non-sensitive fields.
+ */
+export async function syncUser(): Promise<{
+  id: string;
+  role: "PATIENT" | "ADMIN";
+} | null> {
   try {
-    const user = await currentUser();
-    if (!user) return;
-
-    const existingUser = await prisma.user.findUnique({
-      where: { clerkId: user.id },
-    });
-    if (existingUser) return existingUser;
-
-    const dbUser = await prisma.user.create({
-      data: {
-        clerkId: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.emailAddresses[0].emailAddress,
-        phone: user.phoneNumbers[0]?.phoneNumber,
-      },
-    });
-
-    return dbUser;
+    const user = await getCurrentUser();
+    return user ? { id: user.id, role: user.role } : null;
   } catch (error) {
-    console.log("Error in syncUser server action", error);
+    console.error(`[syncUser] failed: ${describeForLog(error)}`);
+    return null;
   }
 }
